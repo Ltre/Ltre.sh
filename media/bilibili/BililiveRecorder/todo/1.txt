@@ -1,16 +1,16 @@
-��ȡBվ�͹ܵ�h264/hevc�ȱ�����Ƶ��Ƭ��
-������BվflvҪ��ת��mp4�Ų�������������ͬ����
+截取B站油管的h264/hevc等编码视频的片段
+（对于B站flv要先转成mp4才不会容易音画不同步）
 
-ffmpeg -ss 00:00:00 -to 00:34:36 -i "/��Դ�ļ�·��.mp4" -acodec copy -vcodec copy "/����Ŀ���ļ�·��.mp4"
+ffmpeg -ss 00:00:00 -to 00:34:36 -i "/来源文件路径.mp4" -acodec copy -vcodec copy "/保存目标文件路径.mp4"
 #ffmpeg
 
 
 
 
 
-Bվ¼���������flv�ļ�ת��mp4
+B站录播姬保存的flv文件转成mp4
 
-ffmpeg -i "/��Դ�ļ�·��.flv" -acodec copy -vcodec copy "/����Ŀ���ļ�·��.mp4"
+ffmpeg -i "/来源文件路径.flv" -acodec copy -vcodec copy "/保存目标文件路径.mp4"
 #ffmpeg
 
 
