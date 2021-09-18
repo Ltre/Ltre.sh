@@ -8,7 +8,8 @@ mkdir $safedir/result
 echo "" > $listfile
 
 # 按修改时间, 批量复制到一个安全目录并按编号改名
-count=0; for ff in `ls *.flv -rt`; do let count++; cp "$ff" "$safedir/$count.flv"; done
+count=0; for ff in `ls *.flv -rt`; do let count++; echo "copy: $ff -> $safedir/$count.flv"; cp "$ff" "$safedir/$count.flv"; done
+# rsync -ah --progress "$ff" "$safedir/$count.flv"
 
 if [ $count -lt 1 ]; then echo 'no flv files'; exit; fi
 
