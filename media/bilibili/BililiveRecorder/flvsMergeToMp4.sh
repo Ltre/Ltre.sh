@@ -4,7 +4,7 @@
 safedir=`pwd`/`date +%Y%d%m%H%M%S`
 mkdir $safedir
 
-# 批量复制到一个安全目录并按编号改名
+# 按修改时间, 批量复制到一个安全目录并按编号改名
 count=0; for ff in `ls *.flv -rt`; do let count++; cp "$ff" "$safedir/$count.flv"; done;
 
 if [ $count -le 1 ]; then echo 'no flv files'; exit; fi
@@ -24,7 +24,7 @@ done
 
 # 删除没用的flv片段
 currd=`pwd`
-cd $safedir #防止误删根目录
+cd $safedir #防止误删根目录文件
 rm *.flv -f
 cd $currd
 
@@ -33,8 +33,7 @@ mkdir $safedir/result
 ffmpeg -f concat -i $listfile -c copy $safedir/result/merge.mp4
 
 # 删除没用的mp4片段
-currd=`pwd`
-cd $safedir #防止误删根目录
+cd $safedir #防止误删根目录文件
 rm *.mp4 -f
 
 echo "Complte! $safedir/result/merge.mp4"
