@@ -1,7 +1,7 @@
 ## 执行此脚本，需先 cd 到存放mp4的目录下，且要求mp4文件全部都处于当前目录层
 ## 注意检查每个视频文件规格是否相似（宽高、编码等）
 
-safedir=`pwd`/`date +%Y%d%m%H%M%S`
+safedir=`pwd`/`date +%Y%m%d%H%M%S`
 listfile=$safedir/list.txt
 mkdir $safedir
 mkdir $safedir/result

@@ -1,7 +1,7 @@
 ## 针对从B站直播录制的flv文件进行安全转换合并，摒弃flv带来的音画不同步的问题
 ## 执行此脚本，需先 cd 到存放flv的目录下，且要求flv文件全部都处于当前目录层
 
-safedir=`pwd`/`date +%Y%d%m%H%M%S`
+safedir=`pwd`/`date +%Y%m%d%H%M%S`
 listfile=$safedir/list.txt
 mkdir $safedir
 mkdir $safedir/result
