@@ -20,7 +20,7 @@ then
     rm $safedir/1.mp4 -f
 else
 
-    # 边转换flv->mp4，边生成 [合并专用的配置文件]
+    # 生成 [合并专用的配置文件]
     i=1
     while(( $i<=count )) 
     do
