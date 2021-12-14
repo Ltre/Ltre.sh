@@ -1,0 +1,1 @@
+for ff in `ls *.flv -rt`; do ffprobe "$ff"; done
