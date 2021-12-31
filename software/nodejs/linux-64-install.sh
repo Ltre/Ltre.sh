@@ -15,4 +15,4 @@ VERSION=${VERSION}
 DISTRO=${DISTRO}
 export PATH=/usr/local/lib/nodejs/node-${VERSION}-${DISTRO}/bin:\$PATH" >> ~/.profile
 
-. ~/.profile
+#  . ~/.profile
