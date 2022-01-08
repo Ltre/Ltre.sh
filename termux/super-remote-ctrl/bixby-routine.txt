@@ -1,4 +1,4 @@
-[T维护1]
+﻿[T维护1]
 IF %TIME == 05:00:00 THEN
     wake screen
     open termux.session # sshd + frp
