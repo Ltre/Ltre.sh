@@ -1,0 +1,10 @@
+[T维护1]
+IF %TIME == 05:00:00 THEN
+    wake screen
+    open termux.session # sshd + frp
+FI
+
+[T维护2]
+IF %TIME == 05:01:00 THEN
+    close termux.UI # reserve daemon
+FI
