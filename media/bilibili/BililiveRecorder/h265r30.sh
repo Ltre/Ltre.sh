@@ -1,6 +1,6 @@
 if [ -n "$1" ];then
     if [ -n "$2" ];then
-        ffmpeg -i $1 -c:v libx265 -c:a copy -movflags +faststart $2
+        ffmpeg -i $1 -c:v libx265 -c:a copy -r 30 -movflags +faststart $2
         exit
     else
         echo "缺少输出文件路径"
