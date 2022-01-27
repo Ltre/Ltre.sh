@@ -2,7 +2,7 @@ while true
 do
     #echo \[`date +%Y-%M-%D %H%m%S`\]
     echo 'waiting next volume for 60s...'
-    sleep 1 # sleep 60
+    sleep 60
     # date +%H%M%S
     if [ `date +%k` -ge 8 ] && [ `date +%k` -lt 23 ]; then
         termux-volume music $((8 + $RANDOM%4)) # 08:00~23:00 音量(8~11)/15
