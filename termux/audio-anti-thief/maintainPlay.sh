@@ -11,6 +11,13 @@ stopAudio(){
     killall mpv # kill -9 `pgrep mpv`
 }
 
+pauseAudio(){
+    kill -STOP `pgrep mpv`
+}
+
+resumeAudio(){
+    kill -CONT `pgrep mpv`
+}
 
 while true
 do
