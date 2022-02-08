@@ -1,6 +1,7 @@
 
 playAudio(){
-    songpath=`ls /data/data/com.termux/files/home/mydir/bin/audio-anti-thief/audio/*.m4a | sort -R | head -n1`
+    CUR_DIR=$(cd `dirname $0` && pwd -P)
+    songpath=`ls ${CUR_DIR}/../audio/*.m4a | sort -R | head -n1`
     echo "Playing ..."
     echo $songpath
     mpv "$songpath"
