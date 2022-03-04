@@ -1,0 +1,5 @@
+本进程的
+ps -ef |grep  关键字 |grep -wv grep|awk '{print $2}'
+
+父进程的
+ps -ef |grep 关键字 |grep -wv grep|awk '{print $3}'
