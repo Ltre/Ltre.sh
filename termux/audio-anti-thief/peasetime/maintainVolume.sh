@@ -7,7 +7,7 @@ do
     if [ `date +%k` -ge 8 ] && [ `date +%k` -lt 11 ]; then
         termux-volume music $((6 + $RANDOM%4)) # 08:00~11:00 音量(6~9)/15
     elif [ `date +%k` -ge 11 ] && [ `date +%k` -lt 19 ]; then
-        termux-volume music $((6 + $RANDOM%7)) # 11:00~19:00 音量(6~12)/15
+        termux-volume music $((6 + $RANDOM%6)) # 11:00~19:00 音量(6~11)/15
     elif [ `date +%k` -ge 19 ] && [ `date +%k` -lt 22 ]; then
         termux-volume music $((6 + $RANDOM%4)) # 19:00~22:00 音量(6～9)/15
     elif [ `date +%k` -ge 22 ] && [ `date +%k` -ne 0 ]; then
