@@ -21,5 +21,24 @@ do
 	sleep 60
 	kill -CONT `pgrep mpv`
     fi
+    
+    
+    # 电量警告
+    minu=$((`date +%M`%10))
+    if [ ${minu#0} -eq 8 ]; then
+        tbsJson=`termux-battery-status`
+        tbsPerc=`echo $tbsJson|jq ".percentage"`
+        tbsPlgd=`echo $tbsJson|jq ".plugged"`
+        # alert-remote放在Ltre.sh/termux/p10-plugins/start-remote.sh.zip 
+        # 如果日后在迁移过程中因缺失文件等原因报错，可删除此句
+        if [ $tbsPerc -le 30 ] && [ $tbsPlgd = "UNPLUGGED" ]; then
+            echo "p10-termux-alert%20电量不足，尽快充电（"${tbsPerc}"）!"
+            . ~/mydir/bin/alert-remote.sh "p10-termux-alert%20电量不足，尽快充电（"${tbsPerc}"）!"
+        # else
+        #   echo "p10-termux-alert%20电量充足（"${tbsPerc}"）!"
+        #   . ~/mydir/bin/alert-remote.sh "p10-termux-alert%20电量充足（"${tbsPerc}"）!"
+        fi
+    fi
+    
 done
 
