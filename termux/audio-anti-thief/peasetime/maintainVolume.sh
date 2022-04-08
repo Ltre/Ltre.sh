@@ -35,7 +35,7 @@ do
         tbsPlgd=`echo $tbsJson|jq ".plugged"`
         # alert-remote放在Ltre.sh/termux/p10-plugins/start-remote.sh.zip 
         # 如果日后在迁移过程中因缺失文件等原因报错，可删除此句
-        if [ $tbsPerc -le 30 ] && [ $tbsPlgd = "UNPLUGGED" ]; then
+        if [ $tbsPerc -le 30 ] && [ $tbsPlgd = \"UNPLUGGED\" ]; then
             echo "p10-termux-alert%20电量不足，尽快充电（"${tbsPerc}"）!"
             . ~/mydir/bin/alert-remote.sh "p10-termux-alert%20电量不足，尽快充电（"${tbsPerc}"）!"
         # else
