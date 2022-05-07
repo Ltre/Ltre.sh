@@ -1,0 +1,8 @@
+ps aux|grep 关键字，拿到进程ID
+tailf /proc/进程ID/cwd/*.log
+
+
+例如查看ffmpeg产生的日志（nohup ffmpeg xxxxxxx >> yyyyyy.log &），结合一起的命令为：
+
+tail -f `ps aux|grep ffmpeg|grep -vw grep|awk '{print "/proc/"$2"/cwd/*.log"}'`
+
