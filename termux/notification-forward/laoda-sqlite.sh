@@ -24,7 +24,8 @@ _urlencode(){
 
 # oabeidadoal ot, 服务器地址已打码，有需要自己修改
 _forward(){
-    curl 'https://tgservice.host.name/?tg/callMethod/cnmb&method=sendMessage' \
+    _host='tgservice.host.name'
+    curl "https://${_host}/?tg/callMethod/cnmb&method=sendMessage" \
       -H 'Accept: application/json, text/javascript, */*; q=0.01' \
       -H 'Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,ja-JP;q=0.6,ja;q=0.5,zh-TW;q=0.4' \
       -H 'Cache-Control: no-cache' \
