@@ -34,18 +34,19 @@ _forward(){
       --insecure
 }
 
-_jq() {
-    echo ${row} | base64 --decode | jq -r ${1}
-}
 
 _saveAndSendNotify(){
     for row in $(echo `termux-notification-list`|jq -r '.[] | @base64')
     do
+        _jq() {
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+        
         # 查库是否存在
         notifyTime=$(_jq '.when')
         _find=`sqlite3 ~/tmp/laoda.sqlite "select * from notify where time = '${notifyTime}'" -json`
         
-        tmptmp=$(echo $_find|jq ".[0].id")
+        tmptmp=$(echo $_find|jq -r ".[0].id")
         #tmptmp=`echo $tmptmp | sed 's/.\(.*\)/\1/' | sed 's/\(.*\)./\1/'` # 删除两侧由jq赠送的双引号，他妈的！
         tmptmp=${tmptmp:-1}
         
@@ -69,8 +70,11 @@ _saveAndSendNotify(){
             echo "content: ${_content}"
             echo "time: ${_time}"
             sqlite3 ~/tmp/laoda.sqlite "insert into notify values(${_id}, '${_tag}', '${_key}', '${_group}', '${_packageName}', '${_title}', '${_content}', '${_time}')"
-            # 发送给机器人 
             
+            # 额外的逻辑：标记微信
+            # if [ $_packageName =  ]
+            
+            # 发送给机器人 
             #_id=`_urlencode "$_id"` # 【注释下同】暂时不编码了，因为发现个别内容转换后会被curl警告非UTF-8
             #_tag=`_urlencode "$_tag"`
             #_key=`_urlencode "$_key"`
@@ -79,7 +83,6 @@ _saveAndSendNotify(){
             #_title=`_urlencode "$_title"`
             #_content=`_urlencode "$_content"`
             #_time=`_urlencode "$_time"`
-            
             _forward "- id: ${_id}
 - tag: ${_tag}
 - key: ${_key}
@@ -94,5 +97,35 @@ _saveAndSendNotify(){
     done
 }
 
-_saveAndSendNotify
 
+
+# todo: if content like 视频通话中 then termux-microphone-record
+# todo: termux live stream
+# todo: termux microphone stream
+# todo: 监听键盘输入 keylogger?
+
+
+# 任务统筹执行
+while true
+do
+    if [ "$tbsPerc" = "" ]; then tbsPerc=100; tbsPlgd=\"PLUGGED\" # 声明初始值，防止后面出错
+
+    # 每隔十分钟获取并缓存一次电量信息（因为这个命令太耗资源）
+    minu=$((`date +%M`%10))
+    if [ ${minu#0} -eq 3 ]; then
+        tbsJson=`termux-battery-status`
+        tbsPerc=`echo $tbsJson|jq ".percentage"`
+        tbsPlgd=`echo $tbsJson|jq ".plugged"`
+        _forward "#电量 ${tbsPerc}%
+`date`"
+    fi
+
+    # 电量高于10%或插着充电器，才会执行任务
+    if [ $tbsPerc -gt 10 ] || [ $tbsPlgd = \"PLUGGED\" ]; then
+    # if [ $tbsPerc -gt 8 ]; then
+        _saveAndSendNotify
+    fi
+
+    echo 'waiting for next...'
+    sleep 30
+done
