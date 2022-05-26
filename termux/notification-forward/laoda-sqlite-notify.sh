@@ -49,8 +49,8 @@ _saveAndSendNotify(){
         tmptmp=$(echo $_find|jq -r ".[0].id")
         #tmptmp=`echo $tmptmp | sed 's/.\(.*\)/\1/' | sed 's/\(.*\)./\1/'` # 删除两侧由jq赠送的双引号，他妈的！
         tmptmp=${tmptmp:-1}
-        
-        if [[ x$tmptmp -eq x"1" ]]
+echo "tmptmp: ${tmptmp}"
+        if [[ x"$tmptmp" = x"1" ]]
         then
             echo "查无数据，将插入"
             _id=$(_jq '.id')
@@ -72,7 +72,21 @@ _saveAndSendNotify(){
             sqlite3 ~/tmp/laoda.sqlite "insert into notify values(${_id}, '${_tag}', '${_key}', '${_group}', '${_packageName}', '${_title}', '${_content}', '${_time}')"
             
             # 额外的逻辑：标记微信
-            # if [ $_packageName =  ]
+            if [ $_packageName = "com.tencent.mm" ]; then
+                _MSGTAG='#微信'
+            elif [ $_packageName = "com.eg.android.AlipayGphone" ]; then
+                _MSGTAG='#支付宝'
+            elif [ $_packageName = "com.taobao.taobao" ]; then
+                _MSGTAG='#淘宝'
+            elif [ $_packageName = "com.samsung.android.messaging" ]; then
+                _MSGTAG='#短信'
+            elif [ $_packageName = "com.android.systemui" ] && [ $_tag = "charging_state" ]; then
+                _MSGTAG='#充电'
+            elif [ $_packageName = "com.samsung.android.incallui" ]; then
+                _MSGTAG='#通话'
+            else
+                _MSGTAG=''
+            fi
             
             # 发送给机器人 
             #_id=`_urlencode "$_id"` # 【注释下同】暂时不编码了，因为发现个别内容转换后会被curl警告非UTF-8
@@ -83,7 +97,8 @@ _saveAndSendNotify(){
             #_title=`_urlencode "$_title"`
             #_content=`_urlencode "$_content"`
             #_time=`_urlencode "$_time"`
-            _forward "- id: ${_id}
+            _forward "${_MSGTAG}
+- id: ${_id}
 - tag: ${_tag}
 - key: ${_key}
 - group: ${_group}
@@ -108,20 +123,20 @@ _saveAndSendNotify(){
 # 任务统筹执行
 while true
 do
-    if [ "$tbsPerc" = "" ]; then tbsPerc=100; tbsPlgd=\"PLUGGED\" # 声明初始值，防止后面出错
+    if [ "$tbsPerc" = "" ]; then tbsPerc=100; tbsPlgd=\"PLUGGED\"; fi # 声明初始值，防止后面出错
 
     # 每隔十分钟获取并缓存一次电量信息（因为这个命令太耗资源）
     minu=$((`date +%M`%10))
     if [ ${minu#0} -eq 3 ]; then
         tbsJson=`termux-battery-status`
-        tbsPerc=`echo $tbsJson|jq ".percentage"`
-        tbsPlgd=`echo $tbsJson|jq ".plugged"`
+        tbsPerc=`echo $tbsJson|jq -r .percentage`
+        tbsPlgd=`echo $tbsJson|jq -r .plugged`
         _forward "#电量 ${tbsPerc}%
 `date`"
     fi
 
     # 电量高于10%或插着充电器，才会执行任务
-    if [ $tbsPerc -gt 10 ] || [ $tbsPlgd = \"PLUGGED\" ]; then
+    if [ $tbsPerc -gt 10 ] || [ $tbsPlgd = "PLUGGED" ]; then
     # if [ $tbsPerc -gt 8 ]; then
         _saveAndSendNotify
     fi
