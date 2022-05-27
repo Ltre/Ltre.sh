@@ -12,6 +12,10 @@
 #   清空：
 #       sqlite3 ~/tmp/laoda.sqlite "delete from notify"
 
+
+WECHAT_SHORT_DUR_COUNT=0 #用于微信短间隔的持续计数
+
+
 _urlencode(){
     echo "${1}" | tr -d '\n' | xxd -plain | sed 's/\(..\)/%\1/g'
 }
@@ -26,7 +30,7 @@ _forward(){
       -H 'Connection: keep-alive' \
       -H 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8' \
       -H 'Cookie: example=123' \
-      -H 'Origin: http://www.caonimabi.com/' \
+      -H 'Origin: http://www.cnmb.com/' \
       -H 'Pragma: no-cache' \
       -H 'User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36' \
       -H 'X-Requested-With: XMLHttpRequest' \
@@ -46,11 +50,10 @@ _saveAndSendNotify(){
         notifyTime=$(_jq '.when')
         _find=`sqlite3 ~/tmp/laoda.sqlite "select * from notify where time = '${notifyTime}'" -json`
         
-        tmptmp=$(echo $_find|jq -r ".[0].id")
+        tmptmp=$(echo $_find|jq -r ".[0].packageName")
         #tmptmp=`echo $tmptmp | sed 's/.\(.*\)/\1/' | sed 's/\(.*\)./\1/'` # 删除两侧由jq赠送的双引号，他妈的！
-        tmptmp=${tmptmp:-1}
-echo "tmptmp: ${tmptmp}"
-        if [[ x"$tmptmp" = x"1" ]]
+        #tmptmp=${tmptmp:-1}
+        if [[ x"$tmptmp" == x ]]
         then
             echo "查无数据，将插入"
             _id=$(_jq '.id')
@@ -74,6 +77,7 @@ echo "tmptmp: ${tmptmp}"
             # 额外的逻辑：标记微信
             if [ $_packageName = "com.tencent.mm" ]; then
                 _MSGTAG='#微信'
+                WECHAT_SHORT_DUR_COUNT=1 #一旦收到新微信，立即对短间隔状态进行重新数，直到达到一定次数后，恢复常规任务执行间隔
             elif [ $_packageName = "com.eg.android.AlipayGphone" ]; then
                 _MSGTAG='#支付宝'
             elif [ $_packageName = "com.taobao.taobao" ]; then
@@ -133,6 +137,11 @@ do
         tbsPlgd=`echo $tbsJson|jq -r .plugged`
         _forward "#电量 ${tbsPerc}%
 `date`"
+    fi
+
+    if [ $WECHAT_SHORT_DUR_COUNT -gt 0 ] && [ $WECHAT_SHORT_DUR_COUNT -lt 60 ]; then
+        WECHAT_SHORT_DUR_COUNT=$(WECHAT_SHORT_DUR_COUNT+1)
+        echo "current WECHAT_SHORT_DUR_COUNT: "$WECHAT_SHORT_DUR_COUNT
     fi
 
     # 电量高于10%或插着充电器，才会执行任务
