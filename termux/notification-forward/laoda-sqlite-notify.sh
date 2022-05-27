@@ -53,7 +53,7 @@ _saveAndSendNotify(){
         tmptmp=$(echo $_find|jq -r ".[0].packageName")
         #tmptmp=`echo $tmptmp | sed 's/.\(.*\)/\1/' | sed 's/\(.*\)./\1/'` # 删除两侧由jq赠送的双引号，他妈的！
         #tmptmp=${tmptmp:-1}
-        if [[ x"$tmptmp" == x ]]
+        if [ x"$tmptmp" = x ]
         then
             echo "查无数据，将插入"
             _id=$(_jq '.id')
@@ -130,8 +130,9 @@ do
     if [ "$tbsPerc" = "" ]; then tbsPerc=100; tbsPlgd=\"PLUGGED\"; fi # 声明初始值，防止后面出错
 
     # 每隔十分钟获取并缓存一次电量信息（因为这个命令太耗资源）
-    minu=$((`date +%M`%10))
-    if [ ${minu#0} -eq 3 ]; then
+    minu=`date +%M`
+    minu=${minu#0}
+    if [ $((minu%10)) -eq 0 ]; then
         tbsJson=`termux-battery-status`
         tbsPerc=`echo $tbsJson|jq -r .percentage`
         tbsPlgd=`echo $tbsJson|jq -r .plugged`
@@ -151,5 +152,5 @@ do
     fi
 
     echo 'waiting for next...'
-    sleep 30
+    sleep 60
 done
