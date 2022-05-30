@@ -127,7 +127,7 @@ _saveAndSendNotify(){
 # 任务统筹执行
 while true
 do
-    if [ "$tbsPerc" = "" ]; then tbsPerc=100; tbsPlgd=\"PLUGGED\"; fi # 声明初始值，防止后面出错
+    if [ "$tbsPerc" = "" ]; then tbsPerc=100; tbsPlgd="PLUGGED"; fi # 声明初始值，防止后面出错
 
     # 每隔十分钟获取并缓存一次电量信息（因为这个命令太耗资源）
     minu=`date +%M`
@@ -141,7 +141,7 @@ do
     fi
 
     if [ $WECHAT_SHORT_DUR_COUNT -gt 0 ] && [ $WECHAT_SHORT_DUR_COUNT -lt 60 ]; then
-        WECHAT_SHORT_DUR_COUNT=$(WECHAT_SHORT_DUR_COUNT+1)
+        WECHAT_SHORT_DUR_COUNT=$((WECHAT_SHORT_DUR_COUNT+1))
         echo "current WECHAT_SHORT_DUR_COUNT: "$WECHAT_SHORT_DUR_COUNT
     fi
 
