@@ -1,3 +1,5 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
 # 1、首先建立库创建表
 #   执行：
 #       sqlite3 -append ~/tmp/laoda.sqlite 
