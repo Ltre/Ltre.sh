@@ -1,5 +1,5 @@
 ## 执行此脚本，需先 cd 到存放mp4的目录下，且要求mp4文件全部都处于当前目录层
-## 注意检查每个视频文件规格是否相似（宽高、编码等）
+                                                                           
 
 safedir=`pwd`/`date +%Y%m%d%H%M%S`
 listfile=$safedir/list.txt
@@ -15,9 +15,9 @@ if [ $count -lt 1 ]; then echo 'no mp4 files'; exit; fi
 
 
 if [ $count -eq 1 ]
-then 
-    ffmpeg -i $safedir/1.mp4 -c copy $safedir/result/merge.mp4
-    rm $safedir/1.mp4 -f
+then
+	echo "只有一个文件，不需要合并"
+
 else
 
     # 生成 [合并专用的配置文件]

@@ -1,0 +1,2 @@
+wget https://getcomposer.org/download/latest-stable/composer.phar
+ln -s /data/data/com.termux/files/home/bin/composer.phar /data/data/com.termux/files/usr/bin/composer
