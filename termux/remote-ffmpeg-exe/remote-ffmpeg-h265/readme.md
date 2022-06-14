@@ -14,6 +14,15 @@
         ffmpeg -i xxx.mp4 yyy.mp4
             (无参数直接转：体积相对不大质量好速度相对快，适用于h264原片) 
         > ffmpeg -i xxx.mp4 -c:v libx265 -c:a copy -crf 18 -movflags +faststart -yyy.mkv
-            (-crf 18体积最大质量好速度快) 
+            (-crf 18体积最大质量好速度快)   @todo： 试试 -crf 20 ?
         > ffmpeg -i xxx.mp4 -c:v libx265 -c:a copy -preset veryslow -movflags +faststart -yyy.mkv
             (-preset veryslow体积最小质量好速度非常慢)
+        > ffmpeg -i xxx.mp4 -c:v libx265 -c:a copy -movflags +faststart -yyy.mkv
+            (h265无附加参数，体积小质量勉强可以速度一般)
+    - preset由快到慢：
+        ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo.
+        当使用x265编码器时, 默认为medium.
+    - crf参数：
+        0 ~ 51.
+        当使用x265编码器时, 默认为28, 20左右视觉无损.
+        
