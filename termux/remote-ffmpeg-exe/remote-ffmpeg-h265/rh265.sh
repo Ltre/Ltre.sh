@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
+#todo 断点续传失败，需要处理
+
+
 # 远程ffmpeg转码
 # 接受第一个参数：本地视频文件路径，转码完成后的结果文件为 [输入路径再追加".mkv"]
 
@@ -12,6 +15,12 @@ CUR_DIR=$(cd `dirname $0` && pwd -P)
 
 # 上传 
 echo "上传中... ${VDNAME}  =>  远程目录${REMOTEDIR}/${REMOTE_TMPFILE}.input"
+uploadTo(){
+    sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "mkdir -p ${REMOTEDIR}" # 创建远程目录
+    sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" "${VDNAME}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input"  # 上传  （注意，多个了P参数，支持断点续传）
+    sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.input |awk '{print \$1}' > ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5" # 上传后写md5
+    sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5"  "${VDNAME}.input.md5" # 下载md5到本地用于验证
+}
 while true; do
     if [[ -e "${VDNAME}.input.md5" ]]; then
         if [[ $(cat "${VDNAME}.input.md5") = $(md5sum "${VDNAME}"|awk '{print $1}') ]]; then 
@@ -19,13 +28,11 @@ while true; do
             break  # 确保完整上传后，才可跳出重试的循环
         else
             echo B
+            uploadTo
         fi
     else
         echo C
-        sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "mkdir -p ${REMOTEDIR}" # 创建远程目录
-        sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" "${VDNAME}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input"  # 上传  （注意，多个了P参数，支持断点续传）
-        sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.input |awk '{print \$1}' > ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5" # 上传后写md5
-        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5"  "${VDNAME}.input.md5" # 下载md5到本地用于验证
+        uploadTo
     fi
     sleep 1
 done
