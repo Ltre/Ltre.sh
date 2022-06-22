@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-#todo 断点续传失败，需要处理
+#todo 断点续传失败，自动重新开始，需要处理
 
 
 # 远程ffmpeg转码
