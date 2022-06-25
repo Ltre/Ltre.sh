@@ -1,16 +1,45 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-#todo 断点续传失败，自动重新开始，需要处理
-
-
 # 远程ffmpeg转码
-# 接受第一个参数：本地视频文件路径，转码完成后的结果文件为 [输入路径再追加".mkv"]
-
-VDNAME=$1 
+# @todo 断点续传失败，文件自动从0开始，需要仔细研究下rsync的相关参数
 
 
+
+
+
+# 参数
+#       接受最后一个参数，作为本地视频文件路径，转码完成后的结果文件为 [输入路径再追加".mkv"]  （此参数必须写在最尾）
+#       -c 参数可定制 ffmpeg 的crf参数值 （可选）
+#       -s 参数指定配置文件的简称，例如 -serv mm 会指定 rh265.mm.conf  （可选）
+ARGS=("$@")
+VDNAME=${ARGS[$(($#-1))]}
+CRF=""
+SERV=""
+while getopts "c:s:" optname; do
+    case "$optname" in
+        c)
+            CRF="-crf ${OPTARG}"
+            ;;
+        s)
+            SERV=".${OPTARG}"
+            ;;
+        *)
+            echo 'error arg option: -${optname}.'
+            exit
+            ;;
+    esac
+done
+
+
+
+
+
+# 装载配置文件
 CUR_DIR=$(cd `dirname $0` && pwd -P)
-. "${CUR_DIR}"/rh265.conf
+. "${CUR_DIR}"/rh265${SERV}.conf
+
+
+
 
 
 # 上传 
@@ -24,10 +53,10 @@ uploadTo(){
 while true; do
     if [[ -e "${VDNAME}.input.md5" ]]; then
         if [[ $(cat "${VDNAME}.input.md5") = $(md5sum "${VDNAME}"|awk '{print $1}') ]]; then 
-            echo A
+            echo "已确认完整上传: ${VDNAME}"
             break  # 确保完整上传后，才可跳出重试的循环
         else
-            echo B
+            echo "上传失败，现在重试..."
             uploadTo
         fi
     else
@@ -38,11 +67,15 @@ while true; do
 done
 
 
-echo '上传完毕，即将开始转码...'
+
 
 
 # 后台远程转码
-sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup sh -c 'ffmpeg -i ${REMOTEDIR}/${REMOTE_TMPFILE}.input -c:v libx265 -c:a copy -movflags +faststart ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv; md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5; touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished' > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
+echo '上传完毕，开始转码...'
+sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup sh -c 'ffmpeg -i ${REMOTEDIR}/${REMOTE_TMPFILE}.input -c:v libx265 -c:a copy $CRF -movflags +faststart ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv; md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5; touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished' > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
+
+
+
 
 
 # 检查转码是否完成（1、如果完成则在服务端写入标记文件*.finished; 2、下载*.finished标记文件到本地；3、当本地检测到*.finished文件时则确认转码完成）
@@ -63,11 +96,20 @@ while true; do
 done
 
 
+
+
+
 # 取回前先改名，减少在审查方面的麻烦
 sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "mv ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv ${REMOTEDIR}/${REMOTE_TMPFILE}.output"
 
 
+
+
+
 echo '转码完毕，开始下载结果...'
+
+
+
 
 
 # 下载会确认完整性，并最后清理垃圾
@@ -82,6 +124,7 @@ while true; do
             # 确认已下载，开始清理垃圾
             sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST " rm ${REMOTEDIR}/${REMOTE_TMPFILE}.input  ${REMOTEDIR}/${REMOTE_TMPFILE}.output  ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.size -f"
             rm "${VDNAME}.input.md5" "${VDNAME}.output.md5" "${VDNAME}.output.size" "${VDNAME}.finished" -f
+            echo "取回完毕： ${VDNAME}.mkv"
             break
         else
             downloadResult
@@ -89,5 +132,6 @@ while true; do
     else
         downloadResult
     fi
-    sleep 1
+    sleep 120
+    echo '临时改的代码，下载的重试循环也等120秒，防止在户外网络不稳定时频繁下载浪费流量'
 done
