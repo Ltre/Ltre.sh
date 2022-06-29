@@ -70,6 +70,8 @@ echo "======== PID=$$ ========
     relate pids: `ls /proc/${pid}/task`
     local: $VDNAME
     remote: ${REMOTEDIR}/${REMOTE_TMPFILE}.input
+    log-ing: ${CUR_DIR}/logs/${REMOTE_TMPFILE}-pid-$$.log
+    log-end: ${CUR_DIR}/logs/end/${REMOTE_TMPFILE}-pid-$$.log
 " >> "${LOG_FILE_END}/log.map"
 
 # 生成便于查看本地日志的脚本文件
