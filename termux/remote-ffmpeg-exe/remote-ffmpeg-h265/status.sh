@@ -12,7 +12,7 @@ done
 servers=(gzz gz txhk aly mm webdev)
 for serv in ${servers[@]}; do
     echo "------------- Server $serv --------------"
-    CUR_DIR=$(cd `dirname $0` && pwd -P)
+    CUR_DIR="$(dirname "$(readlink -f "$0")")"
     . "${CUR_DIR}"/conf/rh265.$serv.conf
     sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "echo 'FFMpeg进程数:' \`ps -ef|awk '{print \$8}'|grep ffmpeg|wc -l\`;  echo 'rsync进程数:' \`ps -ef|awk '{print \$8}'|grep rsync|wc -l\`"
 done
