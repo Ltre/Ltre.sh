@@ -18,6 +18,9 @@
 ## 作者常用的捷径设置
     ln -s {remote-ffmpeg-h265程序目录}/rh265.sh  rh265
     ln -s {remote-ffmpeg-h265程序目录}/status.sh  rt265  #不使用rh开头，这样可方便用少量前缀加TAB自动补全命令
+    #termux下更加偷懒
+    ln -s ~/bin/rh265  $PREFIX/bin/rh265
+    ln -s ~/bin/rt265  $PREFIX/bin/rt265
 
 ## 对于客户端自动生成文件的说明
     假定视频文件名为 abc.mp4, 任务的进程ID是123, 指定的服务器配置文件名中缀(-s参数)是mm, 指定CRF值(-c参数)是18, 随机生成的远程视频源文件名20220628-173848-5481。
