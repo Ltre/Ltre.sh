@@ -17,9 +17,11 @@
 
 ## 作者常用的捷径设置
     ln -s {remote-ffmpeg-h265程序目录}/rh265.sh  rh265
+    ln -s {remote-ffmpeg-h265程序目录}/logmap.sh  rl265
     ln -s {remote-ffmpeg-h265程序目录}/status.sh  rt265  #不使用rh开头，这样可方便用少量前缀加TAB自动补全命令
     #termux下更加偷懒
     ln -s ~/bin/rh265  $PREFIX/bin/rh265
+    ln -s ~/bin/rl265  $PREFIX/bin/rl265
     ln -s ~/bin/rt265  $PREFIX/bin/rt265
 
 ## 对于客户端自动生成文件的说明
