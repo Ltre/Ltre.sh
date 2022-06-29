@@ -4,12 +4,14 @@
 # @todo 断点续传失败，文件自动从0开始，需要仔细研究下rsync的相关参数
 # @todo 需要dashboard跟踪每个任务的文件绝对路径、日志、状态。能识别是否因网络不稳定等原因导致某个循环代码僵住无法跳出
 
+CUR_DIR="$(dirname "$(readlink -f "$0")")"
 
 # 参数
 #       接受最后一个参数，作为本地视频文件路径，转码完成后的结果文件为 [输入路径再追加".mkv"]  （此参数必须写在最尾）
 #       -c 参数可定制 ffmpeg 的crf参数值 （可选）
 #       -s 参数指定配置文件的简称，例如 -s mm 会指定 rh265.mm.conf  （可选）
 ARGS=("$@")
+if [[ $# = 0 ]]; then less "${CUR_DIR}/readme.md"; exit; fi
 VDNAME=${ARGS[$(($#-1))]}   # 输入文件名
 CRF=""                      # ffmpeg命令的crf残片
 CRF_SUFFIX=""               # 本地生成文件名后缀的crf部分
@@ -34,8 +36,17 @@ done
 
 
 
+# 参数拦截
+if ! [[ -e "${VDNAME}" ]]; then 
+    echo "错误：输入的文件不存在"
+    exit
+fi
+
+
+
+
+
 # 根据选择的服务器，装载配置文件
-CUR_DIR="$(dirname "$(readlink -f "$0")")"
 . "${CUR_DIR}"/conf/rh265${SERV}.conf
 
 
