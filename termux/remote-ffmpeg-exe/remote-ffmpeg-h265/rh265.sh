@@ -66,8 +66,8 @@ LOG_FILE_END="${CUR_DIR}"/logs/end
 mkdir -p "${LOG_FILE_END}"
 echo "======== PID=$$ ======== 
     cwd: `ls -l /proc/$$/cwd`
-    cmdline: `cat /proc/${pid}/cmdline`
-    relate pids: `ls /proc/${pid}/task`
+    cmdline: `cat /proc/$$/cmdline`
+    relate pids: `ls /proc/$$/task`
     local: $VDNAME
     remote: ${REMOTEDIR}/${REMOTE_TMPFILE}.input
     log-ing: ${CUR_DIR}/logs/${REMOTE_TMPFILE}-pid-$$.log
@@ -131,7 +131,24 @@ RMLOG_SHOTCUT="${VDNAME}${GENF_SUFFIX}.remotelog.sh"
 
     # 后台远程转码  @todo: 一定要确保网络不稳定时，正确完整执行（观察到的情况：在服务器准备转码时，提示input文件不存在。不知道是怎么到这一步的）
     echo '上传完毕，开始转码...'
-    sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup sh -c 'ffmpeg -i ${REMOTEDIR}/${REMOTE_TMPFILE}.input -c:v libx265 -c:a copy $CRF -movflags +faststart ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv; md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5; touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished' > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
+    RM_COUNT=1
+    while [ $RM_COUNT -le 3 ]; do
+        echo "第${RM_COUNT}次提交转码命令.."
+		sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup sh -c 'ffmpeg -i ${REMOTEDIR}/${REMOTE_TMPFILE}.input -c:v libx265 -c:a copy $CRF -movflags +faststart ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv; md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5; touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished' > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
+		RM_COUNT=$((RM_COUNT+1))
+		pnlist=$(sshpass -p "$PASSWD" ssh -l $USER -p $PORT $HOST "ps -ef|grep '${REMOTE_TMPFILE}'|grep ffmpeg|grep -vw grep|awk '{print \$8}'")
+        for pn in $pnlist; do
+            if [[ "$pn" = "ffmpeg" ]]; then
+                echo "已确认成功提交转码命令，现进入循环等待阶段..."
+                break 2
+            fi
+        done
+    done
+
+    if [ $RM_COUNT -gt 3 ]; then
+        echo "三次机会提交命令结果均失败，程序被迫中止，请自行清理垃圾文件"
+        exit
+    fi
     echo "sshpass -p '${PASSWD}' ssh -l $USER -p $PORT $HOST 'tail -f -n 100 ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup'; " > "${RMLOG_SHOTCUT}" # 提供一条看远程日志的命令
 
 
