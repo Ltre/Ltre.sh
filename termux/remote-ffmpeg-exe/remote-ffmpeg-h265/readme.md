@@ -75,7 +75,7 @@
     - 实时日志位于 ~/bin/remote-ffmpeg-h265/logs
     - 归档日志位于 ~/bin/remote-ffmpeg-h265/logs/end
     - 视频文件与日志的映射MAP位于 ~/bin/remote-ffmpeg-h265/logs/end/log.map
-    - 通常，如果觉得执行异常，可从以下几方面查看日志
+    - 通常，如果觉得执行异常，可从以下几方面查看日志：
     -- 从原视频文件名出发，用 `ps -ef|grep 视频名部分关键字` 搜索进程，找到exe=rh265的进程pid，再利用 logmap.sh 命令，斜杠搜索此pid，找到其 remotelog 和 locallog 的日志快捷命令。
     -- 从远程机器中可能出错的临时文件出发，例如 20220628-173848-5481.input、20220628-173848-5481.mkv，提取需要的关键字，在本地中搜索相关的进程，拿到pid，再利用 logmap.sh 精确定位日志。
 
