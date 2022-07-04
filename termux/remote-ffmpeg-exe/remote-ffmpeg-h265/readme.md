@@ -103,5 +103,9 @@
         
         
 ## 后记
-    笔者在完成此项目后，才去网络上搜了一通，找到别人实现的远程ffmpeg，地址：https://github.com/dannytech/ffmpeg-remote-transcoder/blob/main/frt.py
-    有空去研究下他的，把好的地方学习进来。
+    笔者在完成此项目后，才去网络上搜了一通，找到别人实现的远程ffmpeg，
+    地址：
+        https://github.com/dannytech/ffmpeg-remote-transcoder/blob/main/frt.py
+        https://github.com/joshuaboniface/rffmpeg
+    有空去研究下，把好的地方学进来。
+
