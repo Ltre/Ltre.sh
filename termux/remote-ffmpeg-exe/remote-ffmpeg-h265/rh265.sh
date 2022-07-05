@@ -12,7 +12,7 @@ CUR_DIR="$(dirname "$(readlink -f "$0")")"
 #       -s 参数指定配置文件的简称，例如 -s mm 会指定 rh265.mm.conf  （可选）
 ARGS=("$@")
 if [[ $# = 0 ]]; then less "${CUR_DIR}/readme.md"; exit; fi
-VDNAME=${ARGS[$(($#-1))]}   # 输入文件名
+VDPATH=${ARGS[$(($#-1))]}   # 输入文件名
 CRF=""                      # ffmpeg命令的crf残片
 CRF_SUFFIX=""               # 本地生成文件名后缀的crf部分
 SERV=""                     # 带有服务器简称的文件名中缀残片
@@ -37,7 +37,7 @@ done
 
 
 # 参数拦截
-if ! [[ -e "${VDNAME}" ]]; then 
+if ! [[ -e "${VDPATH}" ]]; then 
     echo "错误：输入的文件不存在"
     exit
 fi
@@ -47,7 +47,12 @@ fi
 
 
 # 根据选择的服务器，装载配置文件
-. "${CUR_DIR}"/conf/rh265${SERV}.conf
+conf="${CUR_DIR}"/conf/rh265${SERV}.conf
+if ! [[ -e "$conf" ]]; then 
+    echo '配置文件 ${conf} 不存在.'
+    exit
+fi
+. $conf
 
 
 
@@ -57,7 +62,7 @@ fi
 GENF_SUFFIX=${SERV}${CRF_SUFFIX}    
 
 # 生成PID标记文件，便于跟踪
-PID_FILE="${VDNAME}"${GENF_SUFFIX}.pid.$$
+PID_FILE="${VDPATH}"${GENF_SUFFIX}.pid.$$
 touch "$PID_FILE"
 
 # 准备好本地日志文件及归档目录
@@ -68,18 +73,19 @@ echo "======== PID=$$ ========
     cwd: `ls -l /proc/$$/cwd`
     cmdline: `cat /proc/$$/cmdline`
     relate pids: `ls /proc/$$/task`
-    local: $VDNAME
+    local: $VDPATH
     remote: ${REMOTEDIR}/${REMOTE_TMPFILE}.input
     log-ing: ${CUR_DIR}/logs/${REMOTE_TMPFILE}-pid-$$.log
     log-end: ${CUR_DIR}/logs/end/${REMOTE_TMPFILE}-pid-$$.log
+    log-remote: sshpass -p '${PASSWD}' ssh -l $USER -p $PORT $HOST 'tail -f -n 100 ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup'
 " >> "${LOG_FILE_END}/log.map"
 
 # 生成便于查看本地日志的脚本文件
-LOG_SHOTCUT="${VDNAME}"${GENF_SUFFIX}.locallog.sh
+LOG_SHOTCUT="${VDPATH}"${GENF_SUFFIX}.locallog.sh
 echo "tail -f -n 100 '${LOG_FILE}' " > "$LOG_SHOTCUT"
 
 # 生成便于查看远程日志的脚本文件（等开始转码时再写）
-RMLOG_SHOTCUT="${VDNAME}${GENF_SUFFIX}.remotelog.sh"
+RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
 
 # 控制错误输出
 # exec 2>> "`getLogPPath`"
@@ -95,24 +101,28 @@ RMLOG_SHOTCUT="${VDNAME}${GENF_SUFFIX}.remotelog.sh"
 
 
     # 上传 
-    echo "上传中... ${VDNAME}  =>  远程目录${REMOTEDIR}/${REMOTE_TMPFILE}.input"
+    echo "上传中... ${VDPATH}  =>  远程目录${REMOTEDIR}/${REMOTE_TMPFILE}.input"
     uploadTo(){
         sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "mkdir -p ${REMOTEDIR}" # 创建远程目录
-        sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" "${VDNAME}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input" # 上传  （注意，多个了P参数，支持断点续传）
+        sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" "${VDPATH}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input" # 上传  （注意，多个了P参数，支持断点续传）
+        #if [[ "no input" = $(sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "if ! [[ -e ${REMOTEDIR}/${REMOTE_TMPFILE}.input ]]; then echo 'no input'; else echo 'uploaded'; fi") ]]; then
+        #    return 0  # 暂时不需要这个判断，有下方的input.md5有效性检测足矣
+        #fi
         sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.input |awk '{print \$1}' > ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5" # 上传后写md5
-        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5"  "${VDNAME}${GENF_SUFFIX}.input.md5" # 下载md5到本地用于验证
+        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5"  "${VDPATH}${GENF_SUFFIX}.input.md5" # 下载md5到本地用于验证
+        # return 1
     }
     while true; do
-        if [[ -e "${VDNAME}${GENF_SUFFIX}.input.md5" ]]; then
+        if [[ -e "${VDPATH}${GENF_SUFFIX}.input.md5" ]]; then
         
-            if [[ $(cat "${VDNAME}${GENF_SUFFIX}.input.md5") = '' ]]; then
-                echo "他妈的，这是一种极端情况，如果没有这一条拦截，就被混过去了。（以前无缘无故在远程没有input文件的情况下，直接跳到了第二步的ffmpeg命令去了！）"
+            if [[ $(cat "${VDPATH}${GENF_SUFFIX}.input.md5") = '' ]]; then
+                echo "检测到远程无效的input.md5文件，可能rsync上传被中断，现在重试）"
                 uploadTo
                 continue
             fi
             
-            if [[ $(cat "${VDNAME}${GENF_SUFFIX}.input.md5") = $(md5sum "${VDNAME}"|awk '{print $1}') ]]; then 
-                echo "已确认完整上传: ${VDNAME}"
+            if [[ $(cat "${VDPATH}${GENF_SUFFIX}.input.md5") = $(md5sum "${VDPATH}"|awk '{print $1}') ]]; then 
+                echo "已确认完整上传: ${VDPATH}"
                 break  # 确保完整上传后，才可跳出重试的循环
             else
                 echo "上传失败，现在重试..."
@@ -131,21 +141,41 @@ RMLOG_SHOTCUT="${VDNAME}${GENF_SUFFIX}.remotelog.sh"
 
     # 后台远程转码  @todo: 一定要确保网络不稳定时，正确完整执行（观察到的情况：在服务器准备转码时，提示input文件不存在。不知道是怎么到这一步的）
     echo '上传完毕，开始转码...'
-    RM_COUNT=1
-    while [ $RM_COUNT -le 3 ]; do
-        echo "第${RM_COUNT}次提交转码命令.."
-		sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup sh -c 'ffmpeg -i ${REMOTEDIR}/${REMOTE_TMPFILE}.input -c:v libx265 -c:a copy $CRF -movflags +faststart ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv; md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5; touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished' > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
-		RM_COUNT=$((RM_COUNT+1))
-		pnlist=$(sshpass -p "$PASSWD" ssh -l $USER -p $PORT $HOST "ps -ef|grep '${REMOTE_TMPFILE}'|grep ffmpeg|grep -vw grep|awk '{print \$8}'")
+    RM_COUNT=0
+    tracingTranscode(){
+        pnlist=$(sshpass -p "$PASSWD" ssh -l $USER -p $PORT $HOST "ps -ef|grep '${REMOTE_TMPFILE}'|grep ffmpeg|grep -vw grep|awk '{print \$8}'")
         for pn in $pnlist; do
             if [[ "$pn" = "ffmpeg" ]]; then
-                echo "已确认成功提交转码命令，现进入循环等待阶段..."
-                break 2
+                return 1
             fi
+        done
+        #检测不到ffmpeg进程，可能视频文件太小，ffmpeg快速完成了，那么检测mkv文件是否存在
+        remoteMkvFileExists=$(sshpass -p "$PASSWD" ssh -l $USER -p $PORT $HOST "if [[ -e ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv ]]; then echo 1; else echo 2; fi")
+        if [[ 1 -eq "$remoteOutputFileExists" ]]; then
+            return 1
+        fi
+        #进程和文件都找不到，
+        return 0
+    }
+    while [ $RM_COUNT -lt 3 ]; do
+        RM_COUNT=$((RM_COUNT+1))
+        echo "第${RM_COUNT}次提交转码命令.."
+		sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup sh -c 'ffmpeg -i ${REMOTEDIR}/${REMOTE_TMPFILE}.input -c:v libx265 -c:a copy $CRF -movflags +faststart ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv; md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5; touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished' > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
+        
+        TRACE_NUM=0
+        while [ $TRACE_NUM -lt 6 ]; do
+            TRACE_NUM=$((TRACE_NUM+1))
+            tracingTranscode
+            if [[ $? -eq 1 ]]; then
+                echo "已确认成功提交转码命令，现进入循环等待阶段..."
+                break 2;
+            fi
+            echo "无法确认是否完整提交转码命令，可能网络不稳定，现等待10秒后再次检查（第${RM_COUNT}轮/第${TRACE_NUM}次）"
+            sleep 10
         done
     done
 
-    if [ $RM_COUNT -gt 3 ]; then
+    if [ $RM_COUNT -ge 3 ]; then
         echo "三次机会提交命令结果均失败，程序被迫中止，请自行清理垃圾文件"
         exit
     fi
@@ -161,13 +191,13 @@ RMLOG_SHOTCUT="${VDNAME}${GENF_SUFFIX}.remotelog.sh"
         sleep 30
         # 获取远程结果文件的大小
         sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "ls -sh ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk '{print \$1}' > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.size"
-        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.output.size"  "${VDNAME}${GENF_SUFFIX}.output.size" > /dev/null 2>&1
-        if [[ -e "${VDNAME}${GENF_SUFFIX}.output.size" ]]; then
-            echo '进行中, 远程结果文件大小：'`cat "${VDNAME}${GENF_SUFFIX}.output.size"`
+        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.output.size"  "${VDPATH}${GENF_SUFFIX}.output.size" > /dev/null 2>&1
+        if [[ -e "${VDPATH}${GENF_SUFFIX}.output.size" ]]; then
+            echo '进行中, 远程结果文件大小：'`cat "${VDPATH}${GENF_SUFFIX}.output.size"`
         fi
         # 检查是否完成
-        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.finished"  "${VDNAME}${GENF_SUFFIX}.finished" > /dev/null 2>&1
-        if [[ -e "${VDNAME}${GENF_SUFFIX}.finished" ]]; then
+        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.finished"  "${VDPATH}${GENF_SUFFIX}.finished" > /dev/null 2>&1
+        if [[ -e "${VDPATH}${GENF_SUFFIX}.finished" ]]; then
             break
         fi
     done
@@ -184,19 +214,19 @@ RMLOG_SHOTCUT="${VDNAME}${GENF_SUFFIX}.remotelog.sh"
 
 
     # 下载会确认完整性，并最后清理垃圾
-    dlPath="${VDNAME}${GENF_SUFFIX}.mkv"
-    echo "转码完毕，开始下载结果...  ${USER}@${HOST}:${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5  => ${dlPath}.mkv "
+    dlPath="${VDPATH}${GENF_SUFFIX}.mkv"
+    echo "转码完毕，开始下载结果...  ${USER}@${HOST}:${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5  => ${dlPath} "
     downloadResult(){
         sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.output"  "${dlPath}"  # 注意，多个了P参数，支持断点续传
-        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5"  "${VDNAME}${GENF_SUFFIX}.output.md5"
+        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5"  "${VDPATH}${GENF_SUFFIX}.output.md5"
     }
     while true; do
         if [[ -e "${dlPath}" ]]; then
-            if [[ $(cat "${VDNAME}${GENF_SUFFIX}.output.md5") = $(md5sum "${dlPath}"|awk '{print $1}') ]]; then 
+            if [[ $(cat "${VDPATH}${GENF_SUFFIX}.output.md5") = $(md5sum "${dlPath}"|awk '{print $1}') ]]; then 
                 echo D
                 # 确认已下载，开始清理垃圾
                 sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST " rm ${REMOTEDIR}/${REMOTE_TMPFILE}.input  ${REMOTEDIR}/${REMOTE_TMPFILE}.output  ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.size -f"
-                rm "${VDNAME}${GENF_SUFFIX}.input.md5" "${VDNAME}${GENF_SUFFIX}.output.md5" "${VDNAME}${GENF_SUFFIX}.output.size" "${VDNAME}${GENF_SUFFIX}.finished" -f
+                rm "${VDPATH}${GENF_SUFFIX}.input.md5" "${VDPATH}${GENF_SUFFIX}.output.md5" "${VDPATH}${GENF_SUFFIX}.output.size" "${VDPATH}${GENF_SUFFIX}.finished" -f
                 echo "取回完毕： ${dlPath}"
                 break
             else
