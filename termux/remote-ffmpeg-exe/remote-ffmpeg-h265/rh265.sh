@@ -117,11 +117,14 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
     uploadTo(){
         sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "mkdir -p ${REMOTEDIR}" # 创建远程目录
         sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" "${VDPATH}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input" # 上传  （注意，多个了P参数，支持断点续传）
+        rsyncResult=$?
         #if [[ "no input" = $(sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "if ! [[ -e ${REMOTEDIR}/${REMOTE_TMPFILE}.input ]]; then echo 'no input'; else echo 'uploaded'; fi") ]]; then
-        #    return 0  # 暂时不需要这个判断，有下方的input.md5有效性检测足矣
+        #    return 0  # 暂时不需要这个判断，有下方while中的input.md5有效性检测足矣
         #fi
-        sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.input |awk '{print \$1}' > ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5" # 上传后写md5
-        sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5"  "${VDPATH}${GENF_SUFFIX}.input.md5" # 下载md5到本地用于验证
+        if [[ "0" = "${rsyncResult}" ]]; then
+            sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.input |awk '{print \$1}' > ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5" # 上传后写md5
+            sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5"  "${VDPATH}${GENF_SUFFIX}.input.md5" # 下载md5到本地用于验证
+        fi
         # return 1
     }
     while true; do
