@@ -1,0 +1,11 @@
+# 相对路径转绝对路径
+lib_get_abs_filename() {
+    filename=$1
+    parentdir=$(dirname "${filename}")
+
+    if [ -d "${filename}" ]; then
+        echo "$(cd "${filename}" && pwd)"
+    elif [ -d "${parentdir}" ]; then
+        echo "$(cd "${parentdir}" && pwd)/$(basename "${filename}")"
+    fi
+}

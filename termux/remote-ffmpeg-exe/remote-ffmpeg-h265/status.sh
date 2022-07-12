@@ -36,13 +36,19 @@ pid2paname(){
 
 
 for pid in `ps -ef|grep rh265|grep -vw grep|awk '{print $2}'`; do
-        if [[ "`pid2name ${pid}`" = "`pid2paname ${pid}`" ]]; then
+    if [[ "`pid2name ${pid}`" = "`pid2paname ${pid}`" ]]; then
 	    continue # 过滤掉重复的子进程（这个子进程是由于rh265.sh的主逻辑用花括号执行造成的）
 	fi
+    ppname=`pid2paname ${pid}`; 
+    if [[ "$paname" = "" ]];then 
+        echo SYSTEM_HIDE; 
+    else 
+        echo $paname; 
+    fi
 	echo "================================"
-	echo "PID: $pid, PPID: `pid2ppid ${pid}`, PPName: `pid2paname`"
+	echo "PID: $pid, PPID: `pid2ppid ${pid}`, PPName: ${ppname}"
 	echo "    exe: `ps -p ${pid}|grep -vw grep|awk 'NF{print $NF}'|tail -1`"
-	echo "    ppname: `pid2paname ${pid}`"
+	echo "    ppname: ${ppname}"
 	echo "    cwd: "`ls -l /proc/${pid}/cwd`
 	echo "    cmdline: "`cat /proc/${pid}/cmdline`
 	echo "    relate pids: "`ls /proc/${pid}/task`

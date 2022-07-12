@@ -7,6 +7,7 @@
     - 本地提前做好SSH对远程机器的信任，便于sshpass顺利执行（执行命令 ssh ... 对应机器地址； 回车后输入yes，以保存此远程机器到.ssh目录）
     - 远程机器安装ffmpeg
     - 本地和远程执行md5sum命令正常
+    - 本地支持realpath命令（来自coreutils库，一般是支持的，不过也要提前注意下）
 
 ## 配置文件
     在 ~/bin/remote-ffmpeg-h265/conf 目录下，有若干 rh265.xxx.conf 文件，和一个默认的rh265.conf文件。
