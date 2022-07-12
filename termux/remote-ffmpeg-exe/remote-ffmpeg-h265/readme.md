@@ -50,6 +50,7 @@
         abc.mp4.mm.crf18.input.md5      # 上传到远程机器后，在远程计算md5文件，并下载到本地，用于完整性校验
         
     开始远程ffmpeg命令时：
+        abc.mp4.mm.crf18.ffmpeg         # 推送到远程机器的脚本文件（客户端会瞬间删除，但在服务器中会保留此后缀的文件）
         abc.mp4.mm.crf18.output.size    # 远程执行中，产生的即时结果(mkv文件)的大小描述文件，给人看的，对于程序运行逻辑来讲没什么用
         abc.mp4.mm.crf18.remotelog.sh   # 便于查看远程日志的脚本文件。 请务必使用  bash xxxx.remotelog.sh 的方式查看
         

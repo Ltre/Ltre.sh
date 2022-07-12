@@ -190,8 +190,12 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
                 exit
             fi
             ffmpeg -i \$inputfile -c:v libx265 -c:a copy $CRF -movflags +faststart \$outputfile
+            ffmpegResult=$?
             md5sum \$outputfile|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5
-            touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished
+            # 必须确保finished文件一定是成功转码完成后写入的
+            if [[ -e \"\$outputfile\" ]] && [[ \"0\" -eq \"\$ffmpegResult\" ]]; then
+                touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished 
+            fi
         " > "${VDPATH}${GENF_SUFFIX}.ffmpeg"
         sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" "${VDPATH}${GENF_SUFFIX}.ffmpeg" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.ffmpeg"
         sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup bash ${REMOTEDIR}/${REMOTE_TMPFILE}.ffmpeg > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
