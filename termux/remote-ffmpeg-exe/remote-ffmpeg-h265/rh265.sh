@@ -11,6 +11,7 @@
 # 基础支持
 CUR_DIR="$(dirname "$(readlink -f "$0")")"
 . "${CUR_DIR}"/lib/get_abs_filename.lib
+. "${CUR_DIR}"/lib/_echo.lib
 
 
 
@@ -193,7 +194,7 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
                 exit
             fi
             ffmpeg -i \$inputfile -c:v libx265 -c:a copy $CRF -movflags +faststart \$outputfile
-            ffmpegResult=$?
+            ffmpegResult=\$?
             md5sum \$outputfile|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5
             # 必须确保finished文件一定是成功转码完成后写入的
             if [[ -e \"\$outputfile\" ]] && [[ \"0\" -eq \"\$ffmpegResult\" ]]; then
@@ -205,7 +206,7 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
         rm -f "${VDPATH}${GENF_SUFFIX}.ffmpeg"
         
         TRACE_NUM=0
-        while [ $TRACE_NUM -lt 10 ]; do
+        while [ $TRACE_NUM -lt 20 ]; do
             TRACE_NUM=$((TRACE_NUM+1))
             tracingTranscode
             if [[ $? -eq 1 ]]; then
@@ -229,8 +230,10 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
 
 
     # 检查转码是否完成（1、如果完成则在服务端写入标记文件*.finished; 2、下载*.finished标记文件到本地；3、当本地检测到*.finished文件时则确认转码完成）
+    WAIT_FF=0
     while true; do
-        echo 'waiting for 30s ...'
+        if [[ $WAIT_FF -lt 30 ]]; then WAIT_FF=$((WAIT_FF+1)); fi
+        echo "waiting for ${WAIT_FF}s ..."
         sleep 30
         # 获取远程结果文件的大小
         sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "ls -sh ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk '{print \$1}' > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.size"
