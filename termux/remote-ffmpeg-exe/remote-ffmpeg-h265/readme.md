@@ -85,15 +85,21 @@
     - 适合不需要看太清楚细节的视频压缩。
     - 喜欢看action片的且有保留完整细节强迫症的盆友请绕道。（因为h265得到的结果文件的细节常有涂抹观感，类似微观马赛克）
 
-    - 自用转码方案优先级：
+    - 自用视觉无损转码方案优先级：
         ffmpeg -i xxx.mp4 yyy.mp4
-            (无参数直接转：体积相对不大质量好速度相对快，适用于h264原片) 
+            (无参数直接转：体积相对不大质量好速度相对快，适用于h264原片。但有时也会得到体积巨大的文件) 
         > ffmpeg -i xxx.mp4 -c:v libx265 -c:a copy -crf 18 -movflags +faststart -yyy.mkv
             (-crf 18体积最大质量好速度快)   @todo： 试试 -crf 20 ?
         > ffmpeg -i xxx.mp4 -c:v libx265 -c:a copy -preset veryslow -movflags +faststart -yyy.mkv
             (-preset veryslow体积最小质量好速度非常慢)
         > ffmpeg -i xxx.mp4 -c:v libx265 -c:a copy -movflags +faststart -yyy.mkv
             (h265无附加参数，体积小质量勉强可以速度一般)
+    - 自用经济实用转码方案：
+        -crf 26  #比h265默认的28优2级，在原片本身清晰度很高，基本没有任何轻微马赛克时，可用
+        -crf 27  #比h265默认的28优1级，在原片本身清晰度极高，几乎没有一点微观马赛克时，可用
+        -crf 28  #相当于不设定crf，在对画质没有任何特殊要求时可用，如一些歌曲mv，影视片段，不注重微观
+        -crf 23  #对于一些很喜欢的，且对画质微观细节有很高要求的，使用此参数，甚至可调低到20~22
+        -crf 25  #对于本身画质不太好，但还是极力要求微观细节的画质不要变得再烂时，使用此参数（如果原片比特率高得离谱且不和分辨率成正比，例如6Mbps的720p，可以使用更低的23）
     - preset由快到慢：
         ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo.
         当使用x265编码器时, 默认为medium.
@@ -105,7 +111,7 @@
         
         
 ## 后记
-    笔者在完成此项目后，才去网络上搜了一通，找到别人实现的远程ffmpeg，
+    在完成此项目后，才去网络上搜了一通，找到别人实现的远程ffmpeg，
     地址：
         https://github.com/dannytech/ffmpeg-remote-transcoder/blob/main/frt.py
         https://github.com/joshuaboniface/rffmpeg
