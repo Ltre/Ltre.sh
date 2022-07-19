@@ -57,7 +57,7 @@ for pid in `ps -ef|grep rh265|grep -vw grep|awk '{print $2}'`; do
 	#echo "\t\t "`ls -l /proc/${pid}/cwd`/\*.nohup
 done
 
-servers=(gzz gz txhk aly mm webdev)
+servers=(138 139 aly gz gzz mm txhk webdev)
 for serv in ${servers[@]}; do
     echo "------------- Server $serv --------------"
     CUR_DIR="$(dirname "$(readlink -f "$0")")"
