@@ -11,14 +11,14 @@
 # 基础支持
 CUR_DIR="$(dirname "$(readlink -f "$0")")"
 . "${CUR_DIR}"/lib/get_abs_filename.lib
-. "${CUR_DIR}"/lib/_echo.lib
+. "${CUR_DIR}"/lib/echolog.lib
 
 
 
 
 
 # 参数
-#       接受最后一个参数，作为本地视频文件路径，转码完成后的结果文件为 [输入路径再追加".mkv"]  （此参数必须写在最尾）
+#       接受最后一个参数，作为本地视频文件路径，转码完成后的结果文件为 [输入路径再追加"{.SERV}{.CRF}.mkv"]  （此参数必须写在最尾）
 #       -c 参数可定制 ffmpeg 的crf参数值 （可选）
 #       -s 参数指定配置文件的简称，例如 -s mm 会指定 rh265.mm.conf  （可选）
 ARGS=("$@")
@@ -113,7 +113,7 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
 
 
     # 上传 
-    echo "上传中... ${VDPATH}  =>  远程目录${REMOTEDIR}/${REMOTE_TMPFILE}.input"
+    echolog "上传中... ${VDPATH}  =>  远程目录${REMOTEDIR}/${REMOTE_TMPFILE}.input"
     rm -f "${VDPATH}${GENF_SUFFIX}.input.md5"
     uploadTo(){
         sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "mkdir -p ${REMOTEDIR}" # 创建远程目录
@@ -132,20 +132,20 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
         if [[ -e "${VDPATH}${GENF_SUFFIX}.input.md5" ]]; then
         
             if [[ $(cat "${VDPATH}${GENF_SUFFIX}.input.md5") = '' ]]; then
-                echo "检测到远程无效的input.md5文件，可能rsync上传被中断，现在重试）"
+                echolog "检测到远程无效的input.md5文件，可能rsync上传被中断，现在重试）"
                 uploadTo
                 continue
             fi
             
             if [[ $(cat "${VDPATH}${GENF_SUFFIX}.input.md5") = $(md5sum "${VDPATH}"|awk '{print $1}') ]]; then 
-                echo "已确认完整上传: ${VDPATH}"
+                echolog "已确认完整上传: ${VDPATH}"
                 break  # 确保完整上传后，才可跳出重试的循环
             else
-                echo "上传失败，现在重试..."
+                echolog "上传失败，现在重试..."
                 uploadTo
             fi
         else
-            echo C
+            echolog C
             uploadTo
         fi
         sleep 1
@@ -157,7 +157,7 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
 
     # 后台远程转码  @todo: 一定要确保网络不稳定时，正确完整执行（观察到的情况：在服务器准备转码时，提示input文件不存在。不知道是怎么到这一步的）
     # @todo: 通过网络检测ffmpeg进程和mkv文件的过程，其实是不可信的，因为会遇到网络波动的情况，造成误判，进而重复提交ffmpeg命令。在遇到确实已转出mkv文件时，会因无法答复系统的[是否覆盖文件]的提问，造成一直提交失败的假象
-    echo '上传完毕，开始转码...'
+    echolog '上传完毕，开始转码...'
     RM_COUNT=0
     tracingTranscode(){ # @todo: 已有mkv文件，但是被重复提交，提示是否覆盖 mkv already exists. Overwrite ? [y/N] Not overwriting - exiting
         pnlist=$(sshpass -p "$PASSWD" ssh -l $USER -p $PORT $HOST "ps -ef|grep '${REMOTE_TMPFILE}'|grep ffmpeg|grep -vw grep|awk '{print \$8}'")
@@ -176,7 +176,7 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
     }
     while [ $RM_COUNT -lt 5 ]; do
         RM_COUNT=$((RM_COUNT+1))
-        echo "第${RM_COUNT}次提交转码命令.."
+        echolog "第${RM_COUNT}次提交转码命令.."
 		# sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup sh -c 'ffmpeg -i ${REMOTEDIR}/${REMOTE_TMPFILE}.input -c:v libx265 -c:a copy $CRF -movflags +faststart ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv; md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5; touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished' > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
         # 上面这条命令太复杂，以后可能还需要添加更多逻辑，有必要拆行，故采用传递远程脚本文件的形式
         echo "
@@ -210,16 +210,16 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
             TRACE_NUM=$((TRACE_NUM+1))
             tracingTranscode
             if [[ $? -eq 1 ]]; then
-                echo "已确认成功提交转码命令，现进入循环等待阶段..."
+                echolog "已确认成功提交转码命令，现进入循环等待阶段..."
                 break 2;
             fi
-            echo "无法确认是否完整提交转码命令，可能网络不稳定，现等待${TRACE_NUM}秒后再次检查（第${RM_COUNT}轮/第${TRACE_NUM}次）"
+            echolog "无法确认是否完整提交转码命令，可能网络不稳定，现等待${TRACE_NUM}秒后再次检查（第${RM_COUNT}轮/第${TRACE_NUM}次）"
             sleep $TRACE_NUM
         done
     done
 
     if [ $RM_COUNT -ge 3 ]; then
-        echo "三次机会提交命令结果均失败，程序被迫中止，请自行清理垃圾文件"
+        echolog "三次机会提交命令结果均失败，程序被迫中止，请自行清理垃圾文件"
         touch "${VDPATH}${GENF_SUFFIX}.ffmpegfail"
         exit
     fi
@@ -233,13 +233,13 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
     WAIT_FF=0
     while true; do
         if [[ $WAIT_FF -lt 30 ]]; then WAIT_FF=$((WAIT_FF+1)); fi
-        echo "waiting for ${WAIT_FF}s ..."
-        sleep 30
+        echolog "waiting for ${WAIT_FF}s ..."
+        sleep $WAIT_FF
         # 获取远程结果文件的大小
         sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "ls -sh ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk '{print \$1}' > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.size"
         sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.output.size"  "${VDPATH}${GENF_SUFFIX}.output.size" > /dev/null 2>&1
         if [[ -e "${VDPATH}${GENF_SUFFIX}.output.size" ]]; then
-            echo '进行中, 远程结果文件大小：'`cat "${VDPATH}${GENF_SUFFIX}.output.size"`
+            echolog '进行中, 远程结果文件大小：'`cat "${VDPATH}${GENF_SUFFIX}.output.size"`
         fi
         # 检查是否完成
         sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.finished"  "${VDPATH}${GENF_SUFFIX}.finished" > /dev/null 2>&1
@@ -261,7 +261,7 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
 
     # 下载会确认完整性，并最后清理垃圾
     dlPath="${VDPATH}${GENF_SUFFIX}.mkv"
-    echo "转码完毕，开始下载结果...  ${USER}@${HOST}:${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5  => ${dlPath} "
+    echolog "转码完毕，开始下载结果...  ${USER}@${HOST}:${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5  => ${dlPath} "
     downloadResult(){
         sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.output"  "${dlPath}"  # 注意，多个了P参数，支持断点续传
         sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5"  "${VDPATH}${GENF_SUFFIX}.output.md5"
@@ -272,11 +272,11 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
         DL_NUM=$((DL_NUM+1))
         if [[ -e "${dlPath}" ]]; then
             if [[ $(cat "${VDPATH}${GENF_SUFFIX}.output.md5") = $(md5sum "${dlPath}"|awk '{print $1}') ]]; then 
-                echo D
+                echolog D
                 # 确认已下载，开始清理垃圾
                 sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST " rm ${REMOTEDIR}/${REMOTE_TMPFILE}.input  ${REMOTEDIR}/${REMOTE_TMPFILE}.output  ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.size -f"
                 rm "${VDPATH}${GENF_SUFFIX}.input.md5" "${VDPATH}${GENF_SUFFIX}.output.md5" "${VDPATH}${GENF_SUFFIX}.output.size" "${VDPATH}${GENF_SUFFIX}.finished" -f
-                echo "取回完毕： ${dlPath}"
+                echolog "取回完毕： ${dlPath}"
                 break
             else
                 downloadResult
@@ -285,7 +285,7 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
             downloadResult
         fi
         # @todo: 由于网络环境切换或波动，下载不一定成功，故给定一些下载的机会；每失败一次，等待时间会增加；当次数用完，则终止程序
-        echo "已尝试第${DL_NUM}次下载，下次确认需等待${DL_NUM}秒..."
+        echolog "已尝试第${DL_NUM}次下载，下次确认需等待${DL_NUM}秒..."
         sleep $DL_NUM
     done
     # 失败会写标志文件

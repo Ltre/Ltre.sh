@@ -10,22 +10,23 @@ s=""                            # 本地生成文件名后缀的crf部分
 
 while getopts "c:s:" optname; do 
     case "$optname" in
-        c)
-            c=" -c ${OPTARG} "
-            ;;    
-	s)           
-	    s=" -s ${OPTARG} "   
-	    ;;                                                                 *)     
-	    echo 'error arg option: -${optname}.'         
-	    exit    
-	    ;;  
-    esac      
+    c)
+        c=" -c ${OPTARG} "
+        ;;
+	s)
+	    s=" -s ${OPTARG} "
+	    ;;
+    *)
+	    echo 'error arg option: -${optname}.'
+	    exit
+	    ;;
+    esac
 done
 
 
 
 if ! [[ -e "${VDPATH}" ]]; then     
-    echo "错误：输入的文件不存在"                                      
+    echo "错误：输入的文件不存在"
     exit
 fi
 
