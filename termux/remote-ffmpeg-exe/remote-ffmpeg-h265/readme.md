@@ -3,6 +3,7 @@
 ## 环境要求
     - 部署于Android Termux App内（ ~/bin/remote-ffmpeg-h265 ）
     - pkg i sshpass # 用于自动输入远程机SSH密码
+    - pkg i jo  # 用于生成json, 详见: https://jpmens.net/2016/03/05/a-shell-command-to-create-json-jo/
     - pkg i rsync # 用于上传原视频和从远程下载结果视频，不论是本地和远程都需要安装
     - 本地提前做好SSH对远程机器的信任，便于sshpass顺利执行（执行命令 ssh ... 对应机器地址； 回车后输入yes，以保存此远程机器到.ssh目录）
     - 远程机器安装ffmpeg

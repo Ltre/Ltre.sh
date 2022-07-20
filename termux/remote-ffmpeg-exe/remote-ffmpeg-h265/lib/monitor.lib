@@ -1,0 +1,57 @@
+
+monitor_set(){
+    local jqcmd="$1"
+    local file="$2"
+    local json=$(cat "${file}"|jq "${jqcmd}" -c)
+    echo "${json}" > "${file}" # centos下禁止cat和>同时执行，在ubuntu下会导致文件变空。故拆成两句，避免输入输出流冲突
+}
+
+
+monitor_get(){
+    local jqcmd="$1"
+    local file="$2"
+    cat "${file}"|jq "${jqcmd}" -c
+}
+
+
+
+
+# 太复杂了，弃用！上面的get和set够用
+# moniterdb set "path.to.leaf" "value"
+# moniterdb get "path.to.leaf"
+# moniterdb all
+# moniterdb clear
+# moniterdb init "...json..."
+moniterdb(){
+    local moniterFile=''
+    while getopts "f:s:" optname; do
+        case "$optname" in
+            f)
+                moniterFile="${OPTARG}"
+                ;;
+            *)
+                echo 'error arg option: -${optname}.'
+                return
+                ;;
+        esac
+    done
+
+    local action=''
+    case $1 in 
+        init)
+            ;;
+        set)
+            ;;
+        get)
+            ;;
+        all)
+            ;;
+        clear)
+            ;;
+        *)
+            echo "error monitordb action $1"
+            return
+            ;;
+    esac
+}
+

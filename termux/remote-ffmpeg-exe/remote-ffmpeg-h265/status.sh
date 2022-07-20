@@ -1,3 +1,11 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+
+CUR_DIR="$(dirname "$(readlink -f "$0")")"
+MONITOR_DIR="${CUR_DIR}"/logs/monitor
+. "${CUR_DIR}"/lib/monitor.lib
+
+
 # 获取进程名称
 pid2name(){
     local arr=(`ps -p $1 | grep -vw grep | awk 'NF{print $NF}'`)
@@ -50,8 +58,9 @@ for pid in `ps -ef|grep rh265|grep -vw grep|awk '{print $2}'`; do
 	echo "    exe: `ps -p ${pid}|grep -vw grep|awk 'NF{print $NF}'|tail -1`"
 	echo "    ppname: ${ppname}"
 	echo "    cwd: "`ls -l /proc/${pid}/cwd`
-	echo "    cmdline: "`cat /proc/${pid}/cmdline`
 	echo "    relate pids: "`ls /proc/${pid}/task`
+    monitor_get '.' "${MONITOR_DIR}/${pid}.json" | jq -r
+    #echo "    cmdline: "`cat /proc/${pid}/cmdline`
 	#echo "\t logfile maybe: "
 	#echo "\t\t "`ls -l /proc/${pid}/cwd`/\*.out
 	#echo "\t\t "`ls -l /proc/${pid}/cwd`/\*.nohup

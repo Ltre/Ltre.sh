@@ -12,6 +12,7 @@
 CUR_DIR="$(dirname "$(readlink -f "$0")")"
 . "${CUR_DIR}"/lib/get_abs_filename.lib
 . "${CUR_DIR}"/lib/echolog.lib
+. "${CUR_DIR}"/lib/monitor.lib
 
 
 
@@ -79,17 +80,40 @@ touch "$PID_FILE"
 # 准备好本地日志文件及归档目录  @todo 改为存储json，方便共享读取
 LOG_FILE="${CUR_DIR}"/logs/${REMOTE_TMPFILE}-pid-$$.log
 LOG_FILE_END="${CUR_DIR}"/logs/end
+MONITOR_DIR="${CUR_DIR}"/logs/monitor
+MONITOR_FILE="${CUR_DIR}"/logs/monitor/$$.json
 mkdir -p "${LOG_FILE_END}"
+mkdir -p "${MONITOR_DIR}"
+# echo "======== PID=$$ ======== 
+#     cwd: `ls -l /proc/$$/cwd`
+#     CMD: $0 $@
+#     relate pids: `ls /proc/$$/task`
+#     local: $VDPATH
+#     local(full): `lib_get_abs_filename "$VDPATH"`
+#     remote: ${REMOTEDIR}/${REMOTE_TMPFILE}.input
+#     log-ing: ${CUR_DIR}/logs/${REMOTE_TMPFILE}-pid-$$.log
+#     log-end: ${CUR_DIR}/logs/end/${REMOTE_TMPFILE}-pid-$$.log
+#     log-remote: sshpass -p '${PASSWD}' ssh -l $USER -p $PORT $HOST 'tail -f -n 100 ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup'
+# " >> "${LOG_FILE_END}/log.map"
+
+# 保存任务明细到监控中心
+MONITOR_JSON=$(jo \
+    cwd="`ls -l /proc/$$/cwd`" \
+    CMD="$0 $@" \
+    relatePids="`ls /proc/$$/task`" \
+    local="$VDPATH" \
+    localFull="`lib_get_abs_filename "$VDPATH"`" \
+    remote="${REMOTEDIR}/${REMOTE_TMPFILE}.input" \
+    loging="${CUR_DIR}/logs/${REMOTE_TMPFILE}-pid-$$.log" \
+    logend="${CUR_DIR}/logs/end/ ${REMOTE_TMPFILE}-pid-$$.log" \
+    logRemote="sshpass -p '${PASSWD}' ssh -l $USER -p $PORT $HOST 'tail -f -n 100 ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup'" \
+    state="START" \
+)
+
+echo "$MONITOR_JSON" > "${MONITOR_FILE}"
+
 echo "======== PID=$$ ======== 
-    cwd: `ls -l /proc/$$/cwd`
-    CMD: $0 $@
-    relate pids: `ls /proc/$$/task`
-    local: $VDPATH
-    local(full): `lib_get_abs_filename "$VDPATH"`
-    remote: ${REMOTEDIR}/${REMOTE_TMPFILE}.input
-    log-ing: ${CUR_DIR}/logs/${REMOTE_TMPFILE}-pid-$$.log
-    log-end: ${CUR_DIR}/logs/end/${REMOTE_TMPFILE}-pid-$$.log
-    log-remote: sshpass -p '${PASSWD}' ssh -l $USER -p $PORT $HOST 'tail -f -n 100 ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup'
+    $(echo "${MONITOR_JSON}"|jq -r)
 " >> "${LOG_FILE_END}/log.map"
 
 # 生成便于查看本地日志的脚本文件
@@ -100,12 +124,12 @@ echo "tail -f -n 100 '${LOG_FILE}' " > "$LOG_SHOTCUT"
 RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
 
 # 控制错误输出
-# exec 2>> "`getLogPPath`"
+# exec 2>> "`getLogPath`"
 
 
 
 
-
+echo "────────────── PID=$$ ──────────────"
 { # <<<<<<<<<<<<<<<<< 主逻辑开始 <<<<<<<<<<<<<<<<<
 
 
@@ -133,19 +157,28 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
         
             if [[ $(cat "${VDPATH}${GENF_SUFFIX}.input.md5") = '' ]]; then
                 echolog "检测到远程无效的input.md5文件，可能rsync上传被中断，现在重试）"
+                #echo "${MONITOR_JSON}"|jq '.state = "UPLOAD_RETRY"' > "${MONITOR_FILE}"
+                monitor_set '.state = "UPLOAD_RETRY"' "${MONITOR_FILE}"
                 uploadTo
                 continue
             fi
             
             if [[ $(cat "${VDPATH}${GENF_SUFFIX}.input.md5") = $(md5sum "${VDPATH}"|awk '{print $1}') ]]; then 
                 echolog "已确认完整上传: ${VDPATH}"
+                #echo "${MONITOR_JSON}"|jq '.state = "UPLOAD_SUCCESS"' > "${MONITOR_FILE}"
+                monitor_set '.state = "UPLOAD_SUCCESS"' "${MONITOR_FILE}"
                 break  # 确保完整上传后，才可跳出重试的循环
             else
                 echolog "上传失败，现在重试..."
+                #echo "${MONITOR_JSON}"|jq '.state = "UPLOAD_RETRY"' > "${MONITOR_FILE}"
+                monitor_set '.state = "UPLOAD_RETRY"' "${MONITOR_FILE}"
                 uploadTo
             fi
         else
             echolog C
+            echo "${MONITOR_FILE}"
+            #echo "${MONITOR_JSON}"|jq '.state = "UPLOAD_ING"' > "${MONITOR_FILE}"
+            monitor_set '.state = "UPLOAD_ING"' "${MONITOR_FILE}"
             uploadTo
         fi
         sleep 1
@@ -177,6 +210,8 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
     while [ $RM_COUNT -lt 5 ]; do
         RM_COUNT=$((RM_COUNT+1))
         echolog "第${RM_COUNT}次提交转码命令.."
+        #echo "${MONITOR_JSON}"|jq '.state = "FFMPEG_PREPARE"' > "${MONITOR_FILE}"
+        monitor_set '.state = "FFMPEG_PREPARE"' "${MONITOR_FILE}"
 		# sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup sh -c 'ffmpeg -i ${REMOTEDIR}/${REMOTE_TMPFILE}.input -c:v libx265 -c:a copy $CRF -movflags +faststart ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv; md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5; touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished' > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
         # 上面这条命令太复杂，以后可能还需要添加更多逻辑，有必要拆行，故采用传递远程脚本文件的形式
         echo "
@@ -234,6 +269,8 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
     while true; do
         if [[ $WAIT_FF -lt 30 ]]; then WAIT_FF=$((WAIT_FF+1)); fi
         echolog "waiting for ${WAIT_FF}s ..."
+        #echo "${MONITOR_JSON}"|jq '.state = "FFMPEG_ING"' > "${MONITOR_FILE}"
+        monitor_set '.state = "FFMPEG_ING"' "${MONITOR_FILE}"
         sleep $WAIT_FF
         # 获取远程结果文件的大小
         sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "ls -sh ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk '{print \$1}' > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.size"
@@ -244,6 +281,8 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
         # 检查是否完成
         sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.finished"  "${VDPATH}${GENF_SUFFIX}.finished" > /dev/null 2>&1
         if [[ -e "${VDPATH}${GENF_SUFFIX}.finished" ]]; then
+            #echo "${MONITOR_JSON}"|jq '.state = "FFMPEG_FINISH"' > "${MONITOR_FILE}"
+            monitor_set '.state = "FFMPEG_FINISH"' "${MONITOR_FILE}"
             break
         fi
     done
@@ -270,6 +309,8 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
     DL_NUM=0
     while [ $DL_NUM -lt 1000 ]; do
         DL_NUM=$((DL_NUM+1))
+        #echo "${MONITOR_JSON}"|jq '.state = "DOWNLOAD_ING"' > "${MONITOR_FILE}"
+        monitor_set '.state = "DOWNLOAD_ING"' "${MONITOR_FILE}"
         if [[ -e "${dlPath}" ]]; then
             if [[ $(cat "${VDPATH}${GENF_SUFFIX}.output.md5") = $(md5sum "${dlPath}"|awk '{print $1}') ]]; then 
                 echolog D
@@ -277,6 +318,8 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
                 sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST " rm ${REMOTEDIR}/${REMOTE_TMPFILE}.input  ${REMOTEDIR}/${REMOTE_TMPFILE}.output  ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.size -f"
                 rm "${VDPATH}${GENF_SUFFIX}.input.md5" "${VDPATH}${GENF_SUFFIX}.output.md5" "${VDPATH}${GENF_SUFFIX}.output.size" "${VDPATH}${GENF_SUFFIX}.finished" -f
                 echolog "取回完毕： ${dlPath}"
+                #echo "${MONITOR_JSON}"|jq '.state = "DOWNLOAD_SUCCESS"' > "${MONITOR_FILE}"
+                monitor_set '.state = "DOWNLOAD_SUCCESS"' "${MONITOR_FILE}"
                 break
             else
                 downloadResult
@@ -291,6 +334,8 @@ RMLOG_SHOTCUT="${VDPATH}${GENF_SUFFIX}.remotelog.sh"
     # 失败会写标志文件
     if ! [[ -e "${dlPath}" ]]; then
         touch "${VDPATH}${GENF_SUFFIX}.downloadfail"
+        #echo "${MONITOR_JSON}"|jq '.state = "DOWNLOAD_FAIL"' > "${MONITOR_FILE}"
+        monitor_set '.state = "DOWNLOAD_FAIL"' "${MONITOR_FILE}"
     fi
     
 
@@ -305,3 +350,4 @@ rm -f "$PID_FILE"
 rm -f "$LOG_SHOTCUT"
 rm -f "$RMLOG_SHOTCUT"
 mv  "${LOG_FILE}"  "${LOG_FILE_END}"
+#rm  "${MONITOR_FILE}" -f # 等监控功能正常了,这一句就可以放开执行了
