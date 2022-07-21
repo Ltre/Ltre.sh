@@ -4,6 +4,7 @@
     - 部署于Android Termux App内（ ~/bin/remote-ffmpeg-h265 ）
     - pkg i sshpass # 用于自动输入远程机SSH密码
     - pkg i jo  # 用于生成json, 详见: https://jpmens.net/2016/03/05/a-shell-command-to-create-json-jo/
+    - pkg i jq  # 用于解析/微调json，详见：https://stedolan.github.io/jq/manual/
     - pkg i rsync # 用于上传原视频和从远程下载结果视频，不论是本地和远程都需要安装
     - 本地提前做好SSH对远程机器的信任，便于sshpass顺利执行（执行命令 ssh ... 对应机器地址； 回车后输入yes，以保存此远程机器到.ssh目录）
     - 远程机器安装ffmpeg
@@ -19,7 +20,9 @@
 ## 示例
 
     - rh265.sh  "视频文件路径.mp4" # 使用默认的服务器配置文件，执行转码
-    - rh265.sh -s mm -c 23 "视频文件路径.mp4"  # 指定服务器配置文件 conf/rh265.mm.conf，并设置 ffmpeg 的 -crf 参数值为23
+    - rh265.sh -s mm -c 23 -p slow "视频文件路径.mp4"  # 指定服务器配置文件 conf/rh265.mm.conf，并设置 ffmpeg 的 -crf 参数值为23，设置ffmpeg的-preset参数值为slow
+    - rh265.sh  "原视频文件路径.mp4"  "原视频文件路径改名.mp4" # 先改名，再使用默认的服务器配置文件，执行转码
+    - rh265.sh -s mm -c 23 -p slow "原视频文件路径.mp4" "原视频文件路径改名.mp4"  # 先改名，指定服务器配置文件 conf/rh265.mm.conf，并设置 ffmpeg 的 -crf 参数值为23，设置ffmpeg的-preset参数值为slow
     - nrh265.sh 参数用法跟 rh265.sh 一样，只不过这个命令会以 nohup rh265.sh xxxx 形式运行，并在原视频目录自动生成同名的nohup日志备胎文件，隔1秒用使用tailf命令呈现此nohup的滚动日志，使用者可以放心按下CTRL+C，不会中断进程。
     - status.sh  # 列出所有任务信息，以及每台服务器的ffmpeg/rsync任务数，以便合理指定空闲的机器执行任务
     - stop-clear.sh  # kill掉所有ffmpeg/rsync相关的进程，并清理(未开发)相关残留垃圾。 （！！！不到万不得已，不要使用，除非你机器有故障）
@@ -82,7 +85,7 @@
     -- 从原视频文件名出发，用 `ps -ef|grep 视频名部分关键字` 搜索进程，找到exe=rh265的进程pid，再利用 logmap.sh 命令，斜杠搜索此pid，找到其 remotelog 和 locallog 的日志快捷命令。
     -- 从远程机器中可能出错的临时文件出发，例如 20220628-173848-5481.input、20220628-173848-5481.mkv，提取需要的关键字，在本地中搜索相关的进程，拿到pid，再利用 logmap.sh 精确定位日志。
 
-## 关于ffmpeg的说明：
+## 关于ffmpeg x265的说明：
     - 适合不需要看太清楚细节的视频压缩。
     - 有保留完整细节强迫症的盆友请绕道。（因h265得到的结果文件的细节常有涂抹观感，类似微观马赛克）
 
@@ -95,7 +98,9 @@
             (-preset veryslow体积最小质量好速度非常慢)
         > ffmpeg -i xxx.mp4 -c:v libx265 -c:a copy -movflags +faststart -yyy.mkv
             (h265无附加参数，体积小质量勉强可以速度一般)
-    - 自用经济实用转码方案：
+    - 自用经济实用crf设定：
+        范围：0 ~ 51 .
+        当使用x265编码器时, 28为默认, 20左右为视觉无损.
         -crf 26  #比h265默认的28优2级，在原片本身清晰度很高，基本没有任何轻微马赛克时，可用
         -crf 27  #比h265默认的28优1级，在原片本身清晰度极高，几乎没有一点微观马赛克时，可用
         -crf 28  #相当于不设定crf，在对画质没有任何特殊要求时可用，如一些歌曲mv，影视片段，不注重微观
@@ -104,9 +109,9 @@
     - preset由快到慢：
         ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo.
         当使用x265编码器时, 默认为medium.
-    - crf参数：
-        0 ~ 51.
-        当使用x265编码器时, 默认为28, 20左右视觉无损.
+        如果愿意多等待50%~100%的时间获得大幅度文件瘦身，可以采用经济的slow作为preset值.
+        不推荐使用slower及更慢的选项，一般机器扛不住，也不值得消耗更多时间.
+        关于preset设定的效益，参考： https://magiclen.org/x265-preset/ .
         
 
 ## 安全注意事项
@@ -115,6 +120,10 @@
     但要特别注意，在termux中安装软件包/执行外来脚本，必须全面检查其安全性，以防SSH信息泄露。
     对于已root的设备，或已启用ADB的，也应注意任何可能被执行的有害程序。
         
+        
+## Todo
+    - 自定义转码命令模板，拟定保存于ffmpegtpl/*.tpl
+    - 自动分配多进程转码，根据服务器空闲情况选择机器
         
 ## 后记
     在完成此项目后，才去网络上搜了一通，找到别人实现的远程ffmpeg，

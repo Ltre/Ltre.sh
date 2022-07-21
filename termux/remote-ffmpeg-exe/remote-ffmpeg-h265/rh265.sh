@@ -24,11 +24,13 @@ CUR_DIR="$(dirname "$(readlink -f "$0")")"
 #       -s 参数指定配置文件的简称，例如 -s mm 会指定 rh265.mm.conf  （可选）
 ARGS=("$@")
 if [[ $# = 0 ]]; then less "${CUR_DIR}/readme.md"; exit; fi
-VDPATH=${ARGS[$(($#-1))]}   # 输入文件名
+VDPATH=${ARGS[$(($#-1))]}   # 输入文件名（一般取最后一个参数作为输入视频文件名。但如果倒数第二个参数也是文件名，则会先将 [倒数第二个文件名] 所指文件，移动到 [最后一个参数值] 所指文件路径，再开始转码）
 CRF=""                      # ffmpeg命令的crf残片
 CRF_SUFFIX=""               # 本地生成文件名后缀的crf部分
 SERV=""                     # 带有服务器简称的文件名中缀残片
-while getopts "c:s:" optname; do
+PRESET=""                   # ffmpeg命令的preset残片
+PRESET_SUFFIX=""            # 本地生成文件名后缀的preset部分
+while getopts "c:s:p:" optname; do
     case "$optname" in
         c)
             CRF="-crf ${OPTARG}"
@@ -37,8 +39,12 @@ while getopts "c:s:" optname; do
         s)
             SERV=".${OPTARG}"
             ;;
+        p)
+            PRESET="-preset ${OPTARG}"
+            PRESET_SUFFIX=".pr${OPTARG}"
+            ;;
         *)
-            echo 'error arg option: -${optname}.'
+            echo "error arg option: -${optname}."
             exit
             ;;
     esac
@@ -48,10 +54,35 @@ done
 
 
 
-# 参数拦截
-if ! [[ -e "${VDPATH}" ]]; then 
-    echo "错误：输入的文件不存在"
-    exit
+# 文件参数拦截 
+# 允许：
+#       rh265 [..options..] rawfile_exists.mp4
+#       rh265 [..options..] rawfile_exists.mp4  movetofile_not_exists.mp4
+# 禁止:
+#       rh265 [..options..] rawfile_not_exists.mp4
+#       rh265 [..options..] rawfile_exists.mp4  movetofile_exists.mp4
+if ! [[ -e "${VDPATH}" ]]; then
+    if [[ $# -eq 1 ]]; then
+        echo "错误：输入的文件不存在"
+        exit
+    fi
+    
+    # 可能采用了 【rh265 [...] rawfile.mp4  movetofile.mp4】的调用形式（先改名，再转码）
+    # MOVETO=$VDPATH
+    # VDPATH=${ARGS[$(($#-2))]}
+    if ! [[ -e "${ARGS[$(($#-2))]}" ]]; then
+        echo "错误：输入的文件不存在"
+        exit
+    else
+        mv "${ARGS[$(($#-2))]}" "${VDPATH}"
+    fi
+else
+    if [[ $# -ge 2 ]]; then
+        if [[ -e "${ARGS[$(($#-2))]}" ]]; then
+            echo "错误：转码前文件改新名失败，因新名所指文件在以前就已存在"
+            exit
+        fi
+    fi
 fi
 
 
@@ -71,7 +102,7 @@ fi
 
 
 # 本地生成文件统一用的完整中缀，如 ".mm.crf23"，生成某文件的具体名称为 xxxxxxx.mm.crf23.finished
-GENF_SUFFIX=${SERV}${CRF_SUFFIX}    
+GENF_SUFFIX=${SERV}${CRF_SUFFIX}${PRESET_SUFFIX}
 
 # 生成PID标记文件，便于跟踪
 PID_FILE="${VDPATH}"${GENF_SUFFIX}.pid.$$
@@ -84,22 +115,11 @@ MONITOR_DIR="${CUR_DIR}"/logs/monitor
 MONITOR_FILE="${CUR_DIR}"/logs/monitor/$$.json
 mkdir -p "${LOG_FILE_END}"
 mkdir -p "${MONITOR_DIR}"
-# echo "======== PID=$$ ======== 
-#     cwd: `ls -l /proc/$$/cwd`
-#     CMD: $0 $@
-#     relate pids: `ls /proc/$$/task`
-#     local: $VDPATH
-#     local(full): `lib_get_abs_filename "$VDPATH"`
-#     remote: ${REMOTEDIR}/${REMOTE_TMPFILE}.input
-#     log-ing: ${CUR_DIR}/logs/${REMOTE_TMPFILE}-pid-$$.log
-#     log-end: ${CUR_DIR}/logs/end/${REMOTE_TMPFILE}-pid-$$.log
-#     log-remote: sshpass -p '${PASSWD}' ssh -l $USER -p $PORT $HOST 'tail -f -n 100 ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup'
-# " >> "${LOG_FILE_END}/log.map"
 
-# 保存任务明细到监控中心
+# 保存任务明细到监控中心 （注明下，此处CMD位置由于用了双引号括住，故$@要改成$*，不然报坑爹的Argument `×××' is neither k=v nor k@v 错误）
 MONITOR_JSON=$(jo \
     cwd="`ls -l /proc/$$/cwd`" \
-    CMD="$0 $@" \
+    CMD="$0 $*" \
     relatePids="`ls /proc/$$/task`" \
     local="$VDPATH" \
     localFull="`lib_get_abs_filename "$VDPATH"`" \
@@ -157,7 +177,6 @@ echo "────────────── PID=$$ ────────
         
             if [[ $(cat "${VDPATH}${GENF_SUFFIX}.input.md5") = '' ]]; then
                 echolog "检测到远程无效的input.md5文件，可能rsync上传被中断，现在重试）"
-                #echo "${MONITOR_JSON}"|jq '.state = "UPLOAD_RETRY"' > "${MONITOR_FILE}"
                 monitor_set '.state = "UPLOAD_RETRY"' "${MONITOR_FILE}"
                 uploadTo
                 continue
@@ -165,19 +184,15 @@ echo "────────────── PID=$$ ────────
             
             if [[ $(cat "${VDPATH}${GENF_SUFFIX}.input.md5") = $(md5sum "${VDPATH}"|awk '{print $1}') ]]; then 
                 echolog "已确认完整上传: ${VDPATH}"
-                #echo "${MONITOR_JSON}"|jq '.state = "UPLOAD_SUCCESS"' > "${MONITOR_FILE}"
                 monitor_set '.state = "UPLOAD_SUCCESS"' "${MONITOR_FILE}"
                 break  # 确保完整上传后，才可跳出重试的循环
             else
                 echolog "上传失败，现在重试..."
-                #echo "${MONITOR_JSON}"|jq '.state = "UPLOAD_RETRY"' > "${MONITOR_FILE}"
                 monitor_set '.state = "UPLOAD_RETRY"' "${MONITOR_FILE}"
                 uploadTo
             fi
         else
             echolog C
-            echo "${MONITOR_FILE}"
-            #echo "${MONITOR_JSON}"|jq '.state = "UPLOAD_ING"' > "${MONITOR_FILE}"
             monitor_set '.state = "UPLOAD_ING"' "${MONITOR_FILE}"
             uploadTo
         fi
@@ -210,7 +225,6 @@ echo "────────────── PID=$$ ────────
     while [ $RM_COUNT -lt 5 ]; do
         RM_COUNT=$((RM_COUNT+1))
         echolog "第${RM_COUNT}次提交转码命令.."
-        #echo "${MONITOR_JSON}"|jq '.state = "FFMPEG_PREPARE"' > "${MONITOR_FILE}"
         monitor_set '.state = "FFMPEG_PREPARE"' "${MONITOR_FILE}"
 		# sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "nohup sh -c 'ffmpeg -i ${REMOTEDIR}/${REMOTE_TMPFILE}.input -c:v libx265 -c:a copy $CRF -movflags +faststart ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv; md5sum ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5; touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished' > ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup 2>&1 &"
         # 上面这条命令太复杂，以后可能还需要添加更多逻辑，有必要拆行，故采用传递远程脚本文件的形式
@@ -228,7 +242,7 @@ echo "────────────── PID=$$ ────────
                 echo \"已有mkv文件，不必重复提交\"
                 exit
             fi
-            ffmpeg -i \$inputfile -c:v libx265 -c:a copy $CRF -movflags +faststart \$outputfile
+            ffmpeg -i \$inputfile -c:v libx265 -c:a copy $CRF $PRESET -movflags +faststart \$outputfile
             ffmpegResult=\$?
             md5sum \$outputfile|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5
             # 必须确保finished文件一定是成功转码完成后写入的
@@ -269,7 +283,6 @@ echo "────────────── PID=$$ ────────
     while true; do
         if [[ $WAIT_FF -lt 30 ]]; then WAIT_FF=$((WAIT_FF+1)); fi
         echolog "waiting for ${WAIT_FF}s ..."
-        #echo "${MONITOR_JSON}"|jq '.state = "FFMPEG_ING"' > "${MONITOR_FILE}"
         monitor_set '.state = "FFMPEG_ING"' "${MONITOR_FILE}"
         sleep $WAIT_FF
         # 获取远程结果文件的大小
@@ -281,7 +294,6 @@ echo "────────────── PID=$$ ────────
         # 检查是否完成
         sshpass -p "${PASSWD}" rsync -av -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.finished"  "${VDPATH}${GENF_SUFFIX}.finished" > /dev/null 2>&1
         if [[ -e "${VDPATH}${GENF_SUFFIX}.finished" ]]; then
-            #echo "${MONITOR_JSON}"|jq '.state = "FFMPEG_FINISH"' > "${MONITOR_FILE}"
             monitor_set '.state = "FFMPEG_FINISH"' "${MONITOR_FILE}"
             break
         fi
@@ -309,7 +321,6 @@ echo "────────────── PID=$$ ────────
     DL_NUM=0
     while [ $DL_NUM -lt 1000 ]; do
         DL_NUM=$((DL_NUM+1))
-        #echo "${MONITOR_JSON}"|jq '.state = "DOWNLOAD_ING"' > "${MONITOR_FILE}"
         monitor_set '.state = "DOWNLOAD_ING"' "${MONITOR_FILE}"
         if [[ -e "${dlPath}" ]]; then
             if [[ $(cat "${VDPATH}${GENF_SUFFIX}.output.md5") = $(md5sum "${dlPath}"|awk '{print $1}') ]]; then 
@@ -318,7 +329,6 @@ echo "────────────── PID=$$ ────────
                 sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST " rm ${REMOTEDIR}/${REMOTE_TMPFILE}.input  ${REMOTEDIR}/${REMOTE_TMPFILE}.output  ${REMOTEDIR}/${REMOTE_TMPFILE}.input.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5  ${REMOTEDIR}/${REMOTE_TMPFILE}.output.size -f"
                 rm "${VDPATH}${GENF_SUFFIX}.input.md5" "${VDPATH}${GENF_SUFFIX}.output.md5" "${VDPATH}${GENF_SUFFIX}.output.size" "${VDPATH}${GENF_SUFFIX}.finished" -f
                 echolog "取回完毕： ${dlPath}"
-                #echo "${MONITOR_JSON}"|jq '.state = "DOWNLOAD_SUCCESS"' > "${MONITOR_FILE}"
                 monitor_set '.state = "DOWNLOAD_SUCCESS"' "${MONITOR_FILE}"
                 break
             else
@@ -334,7 +344,6 @@ echo "────────────── PID=$$ ────────
     # 失败会写标志文件
     if ! [[ -e "${dlPath}" ]]; then
         touch "${VDPATH}${GENF_SUFFIX}.downloadfail"
-        #echo "${MONITOR_JSON}"|jq '.state = "DOWNLOAD_FAIL"' > "${MONITOR_FILE}"
         monitor_set '.state = "DOWNLOAD_FAIL"' "${MONITOR_FILE}"
     fi
     
