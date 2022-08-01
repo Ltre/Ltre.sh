@@ -3,6 +3,8 @@
 # 远程ffmpeg转码
 # @todo 断点续传失败，文件自动从0开始，需要仔细研究下rsync的相关参数
 # @todo 需要dashboard跟踪每个任务的文件绝对路径、日志、状态。能识别是否因网络不稳定等原因导致某个循环代码僵住无法跳出
+# @todo 支持多个位置插入干预命令(用途: 改变休眠时长,跳出循环,提前终止,改变行为等)
+# @todo 提供命令, 停止指定任务, 并清理残留垃圾文件
 
 
 
@@ -118,15 +120,16 @@ mkdir -p "${MONITOR_DIR}"
 
 # 保存任务明细到监控中心 （注明下，此处CMD位置由于用了双引号括住，故$@要改成$*，不然报坑爹的Argument `×××' is neither k=v nor k@v 错误）
 MONITOR_JSON=$(jo \
+    serv=${SERV/./} \
     cwd="`ls -l /proc/$$/cwd`" \
-    CMD="$0 $*" \
-    relatePids="`ls /proc/$$/task`" \
+    cmd="$0 $*" \
+    relatepids="`ls /proc/$$/task`" \
     local="$VDPATH" \
-    localFull="`lib_get_abs_filename "$VDPATH"`" \
+    localfull="`lib_get_abs_filename "$VDPATH"`" \
     remote="${REMOTEDIR}/${REMOTE_TMPFILE}.input" \
     loging="${CUR_DIR}/logs/${REMOTE_TMPFILE}-pid-$$.log" \
     logend="${CUR_DIR}/logs/end/ ${REMOTE_TMPFILE}-pid-$$.log" \
-    logRemote="sshpass -p '${PASSWD}' ssh -l $USER -p $PORT $HOST 'tail -f -n 100 ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup'" \
+    logremote="sshpass -p '${PASSWD}' ssh -l $USER -p $PORT $HOST 'tail -f -n 100 ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup'" \
     state="START" \
 )
 
@@ -214,12 +217,16 @@ echo "────────────── PID=$$ ────────
                 return 1
             fi
         done
-        #检测不到ffmpeg进程，可能视频文件太小，ffmpeg快速完成了，那么检测mkv文件是否存在
+        #检测不到ffmpeg进程，可能视频文件太小，ffmpeg快速完成了，那么检测mkv或output文件是否存在
         remoteMkvFileExists=$(sshpass -p "$PASSWD" ssh -l $USER -p $PORT $HOST "if [[ -e ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv ]]; then echo 1; else echo 2; fi")
+        if [[ 1 -eq "$remoteMkvFileExists" ]]; then
+            return 1
+        fi
+        remoteOutputFileExists=$(sshpass -p "$PASSWD" ssh -l $USER -p $PORT $HOST "if [[ -e ${REMOTEDIR}/${REMOTE_TMPFILE}.output ]]; then echo 1; else echo 2; fi")
         if [[ 1 -eq "$remoteOutputFileExists" ]]; then
             return 1
         fi
-        #进程和文件都找不到
+        #进程和文件都找不到，可能转码失败，或ffmpeg命令提交失败
         return 0
     }
     while [ $RM_COUNT -lt 5 ]; do
@@ -245,9 +252,11 @@ echo "────────────── PID=$$ ────────
             ffmpeg -i \$inputfile -c:v libx265 -c:a copy $CRF $PRESET -movflags +faststart \$outputfile
             ffmpegResult=\$?
             md5sum \$outputfile|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5
-            # 必须确保finished文件一定是成功转码完成后写入的
             if [[ -e \"\$outputfile\" ]] && [[ \"0\" -eq \"\$ffmpegResult\" ]]; then
-                touch ${REMOTEDIR}/${REMOTE_TMPFILE}.finished 
+                # 确认ffmpeg已成功执行完毕，写入finished标记文件
+                touch  ${REMOTEDIR}/${REMOTE_TMPFILE}.finished
+                # 修改结果文件的后缀名，规避审查（可能行吧）
+                mv  ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv  ${REMOTEDIR}/${REMOTE_TMPFILE}.output
             fi
         " > "${VDPATH}${GENF_SUFFIX}.ffmpeg"
         sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" "${VDPATH}${GENF_SUFFIX}.ffmpeg" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.ffmpeg"
@@ -303,8 +312,9 @@ echo "────────────── PID=$$ ────────
 
 
 
-    # 取回前先改名，减少在审查方面的麻烦
-    sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "mv ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv ${REMOTEDIR}/${REMOTE_TMPFILE}.output"
+    # 此步远程命令，已转移至 *.ffmpeg
+    # 取回前先改名，减少在审查方面的麻烦（这里有大问题：网络不稳定导致执行失败，进而导致后面无法下载）
+    # sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "mv ${REMOTEDIR}/${REMOTE_TMPFILE}.mkv ${REMOTEDIR}/${REMOTE_TMPFILE}.output"
 
 
 

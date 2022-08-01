@@ -11,4 +11,4 @@ HOST=$1
 PORT=$2
 REMOTEPATH=$3
 LOCALPATH=$4
-sshpass -p "远程机器密码" rsync -av -e "ssh -p ${PORT}" 用户名@${HOST}:"${REMOTEPATH}"  "${LOCALPATH}"
+sshpass -p "远程机器密码" rsync -avP -e "ssh -p ${PORT}" 用户名@${HOST}:"${REMOTEPATH}"  "${LOCALPATH}"
