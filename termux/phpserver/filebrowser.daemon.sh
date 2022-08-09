@@ -1,3 +1,4 @@
+# 一个非常简单的临时文件浏览器，可指定目录和端口
 # ~/bin/phpserver/filebrowser.daemon  [FILEROOT]  [PORT]
 
 if [[ "$1" != "" ]]; then
