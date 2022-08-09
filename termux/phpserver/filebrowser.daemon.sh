@@ -13,7 +13,7 @@ else
     PORT=$2
 fi
 
-mkdir -p ~/bin/phpserver/file-daemon
+mkdir -p ~/bin/phpserver/.filebrowser-daemon
 
 echo "<?php
 
@@ -97,6 +97,6 @@ foreach (\$paths as \$p) {
     echo '</li>';
 }
 echo '</ul>';
-" > ~/bin/phpserver/file-daemon/index.php
+" > ~/bin/phpserver/.filebrowser-daemon/index.php
 
-php -S 0.0.0.0:$PORT -t ~/bin/phpserver/file-daemon
+php -S 0.0.0.0:$PORT -t ~/bin/phpserver/.filebrowser-daemon
