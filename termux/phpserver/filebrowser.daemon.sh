@@ -68,11 +68,17 @@ function canBeView(\$filename){
     return false;
 }
 
-\$path = \$_GET['path'] ? ('/'.\$_GET['path']) : '';
-\$currpath = '${FILEROOT}' . \$path;
-
+\$path = \$_GET['path'] ? ('/'.\$_GET['path']) : ''; //web请求的相对路径 （相对于\$fileroot）
+\$fileroot = realpath('${FILEROOT}'); //界定文件根目录（shell转php变量）
+\$currpath = \$fileroot . \$path; //
 if (\$currpath == '') {
     die('currpath can not be empty string!');
+}
+
+\$currpath = realpath(\$currpath);
+\$regex = '#^' . str_replace(['.','(',')','[',']'], ['\.','\(','\)','\[','\]'], \$fileroot) . '/?.*#';
+if (! preg_match(\$regex, \$currpath)) {
+    die('fuck you!');
 }
 
 if (is_file(\$currpath)) {
@@ -87,14 +93,12 @@ if (is_file(\$currpath)) {
 echo '<meta charset=\"utf-8\">';
 echo '<ul>';
 foreach (\$paths as \$p) {
-    if (\$p == '..' || \$p == '.') {
-        continue;
-    }
-    \$name = preg_replace('#^' . str_replace('.', '\.', \$currpath) . '/?(.+)#', '\$1', \$p);
-    \$patharg = preg_replace('#^' . str_replace('.', '\.', '${FILEROOT}') . '/?(.+)#', '\$1', \$p);
+    \$name = preg_replace('#^' . str_replace(['.','(',')','[',']'], ['\.','\(','\)','\[','\]'], \$currpath) . '/?(.+)#', '\$1', \$p);
+    \$patharg = preg_replace('#^' . str_replace(['.','(',')','[',']'], ['\.','\(','\)','\[','\]'], \$fileroot) . '/?(.+)#', '\$1', \$p);
+    \$query = http_build_query(['path' => \$patharg]);
     //echo \"\$path/\$p <br> \";
     echo '<li>';
-    echo \"<a href=\\\"/?path={\$patharg}\\\">\$name</a>\";
+    echo \"<a href=\\\"/?{\$query}\\\" title=\\\"\$p\\\">\$name</a>\";
     echo '</li>';
 }
 echo '</ul>';
