@@ -98,6 +98,7 @@ foreach (\$paths as \$p) {
     \$query = http_build_query(['path' => \$patharg]);
     //echo \"\$path/\$p <br> \";
     echo '<li>';
+    if (is_dir(\$p)) echo '[dir]'; else echo '['.mime_content_type(\$p).']';
     echo \"<a href=\\\"/?{\$query}\\\" title=\\\"\$p\\\">\$name</a>\";
     echo '</li>';
 }
