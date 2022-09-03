@@ -112,10 +112,10 @@ fi
 
 if [[ "${HIDE_SERV}" != "1" ]]; then
 
-	servers=(138 139 aly gz gzz mm txhk webdev)
+	servers=(138 139 aly gzz mm txhk hkmm webdev)
 	for serv in ${servers[@]}; do
 		echo "------------- Server $serv --------------"
-		CUR_DIR="$(dirname "$(readlink -f "$0")")"
+		# CUR_DIR="$(dirname "$(readlink -f "$0")")"
 		. "${CUR_DIR}"/conf/rh265.$serv.conf
 		sshpass -p "${PASSWD}" ssh -l $USER -p $PORT $HOST "echo 'FFMpeg进程数:' \`ps -ef|awk '{print \$8}'|grep ffmpeg|wc -l\`;  echo 'rsync进程数:' \`ps -ef|awk '{print \$8}'|grep rsync|wc -l\`"
 	done
@@ -125,7 +125,8 @@ fi
 
 
 
-# cwd|cmd|local|localfull|remote|loging|logend|logRemote|state
+
+# cwd|cmd|local|localfull|remote|loging|logend|logRemote|state|dl|kl
 if [[ "${TASK_PID}" != "0" ]]; then
 
 	case "${SUB_CMD}" in 
@@ -139,10 +140,34 @@ if [[ "${TASK_PID}" != "0" ]]; then
             monitor_get ".${SUB_CMD}" "${MONITOR_DIR}/${TASK_PID}.json" | jq -r > "${CUR_DIR}"/cache/${TASK_PID}.rlog.sh
             bash "${CUR_DIR}"/cache/${TASK_PID}.rlog.sh
             ;;
+        dl)
+            serv=`monitor_get '.serv' "${MONITOR_DIR}/${TASK_PID}.json" | jq -r`
+            localfull=`monitor_get '.localfull' "${MONITOR_DIR}/${TASK_PID}.json" | jq -r`
+            # 根据选择的服务器，装载配置文件
+            conf="${CUR_DIR}"/conf/rh265$(if [[ "$serv" = "" ]]; then echo ""; else echo ".$serv"; fi ).conf
+            if ! [[ -e "$conf" ]]; then
+                echo '配置文件 ${conf} 不存在.'
+                exit
+            fi
+            . $conf
+            sshpass -p "${PASSWD}" rsync -avP -e "ssh -p ${PORT}" ${USER}@${HOST}:"${REMOTEDIR}/${REMOTE_TMPFILE}.mkv"  "${localfull}.`date +%Y%m%d_%H%M%S`.dl.mkv"
+            ;; # 未完全测试成功
+        kl)
+            plist=`ps -ef|grep "${TASK_PID}"|grep -vw grep`
+            for pline in $plist; do
+                ppid=`echo "$pline"|awk '{print $3}'`
+                if [[ "$ppid" = "$TASK_PID" ]]; then
+                    kill -9 `echo "$pline"|awk '{print $2}'`
+                fi
+            done
+            kill -9 $TASK_PID
+            echo 'kill task (todo)'
+            ;; # 未完全测试成功
         *)
             monitor_get '.' "${MONITOR_DIR}/${TASK_PID}.json" | jq -r
             ;;
     esac
         
 fi
+
 

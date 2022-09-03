@@ -118,9 +118,11 @@ MONITOR_FILE="${CUR_DIR}"/logs/monitor/$$.json
 mkdir -p "${LOG_FILE_END}"
 mkdir -p "${MONITOR_DIR}"
 
-# 保存任务明细到监控中心 （注明下，此处CMD位置由于用了双引号括住，故$@要改成$*，不然报坑爹的Argument `×××' is neither k=v nor k@v 错误）
+# 保存任务明细到监控中心 （注明下，此处cmd位置由于用了双引号括住，故$@要改成$*，不然报坑爹的Argument `×××' is neither k=v nor k@v 错误）
+# @todo BUG: 在SERV和CRF_SUFFIX为空串时，期望serv和crf保存空串，但实际保存了null （相反，指定了SERV和CRF_SUFFIX时，则执行正常）
 MONITOR_JSON=$(jo \
-    serv=${SERV/./} \
+    serv=$( if [[ "$SERV" != "" ]]; then echo ${SERV/./}; else echo ""; fi ) \
+    crf=$( if [[ "$CRF_SUFFIX" != "" ]]; then echo ${CRF_SUFFIX/./}; else echo ""; fi ) \
     cwd="`ls -l /proc/$$/cwd`" \
     cmd="$0 $*" \
     relatepids="`ls /proc/$$/task`" \
