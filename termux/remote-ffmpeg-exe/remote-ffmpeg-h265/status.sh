@@ -10,7 +10,7 @@ mkdir -p "${CUR_DIR}"/cache
 # status -t # 仅列出任务列表，不含机器状态
 # status -s # 仅列出机器状态，不含任务列表
 # status -p ${pid} # 仅列出某任务的信息 （此模式将不列出所有任务列表和机器状态）
-# status -p ${pid} -c [sub_cmd] # 执行某任务的子指令 （此模式将不列出所有任务列表和机器状态）。[sub_cmd]子命令，支持cwd|CMD|local|localFull|remote|loging|logend|logRemote|state
+# status -p ${pid} -c [sub_cmd] # 执行某任务的子指令 （此模式将不列出所有任务列表和机器状态）。[sub_cmd]子命令，支持cwd|CMD|local|localFull|remote|loging|logend|logRemote|state|dl|kl
 HIDE_TASK=0
 HIDE_SERV=0
 TASK_PID=0
