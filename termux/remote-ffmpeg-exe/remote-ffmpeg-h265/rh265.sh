@@ -130,7 +130,7 @@ MONITOR_JSON=$(jo \
     localfull="`lib_get_abs_filename "$VDPATH"`" \
     remote="${REMOTEDIR}/${REMOTE_TMPFILE}.input" \
     loging="${CUR_DIR}/logs/${REMOTE_TMPFILE}-pid-$$.log" \
-    logend="${CUR_DIR}/logs/end/ ${REMOTE_TMPFILE}-pid-$$.log" \
+    logend="${CUR_DIR}/logs/end/${REMOTE_TMPFILE}-pid-$$.log" \
     logremote="sshpass -p '${PASSWD}' ssh -l $USER -p $PORT $HOST 'tail -f -n 100 ${REMOTEDIR}/${REMOTE_TMPFILE}.nohup'" \
     state="START" \
 )
