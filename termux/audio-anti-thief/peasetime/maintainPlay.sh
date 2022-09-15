@@ -3,7 +3,7 @@ playAudio(){
         return
     fi
     CUR_DIR=$(cd `dirname $0` && pwd -P)
-    songpath=`ls ${CUR_DIR}/../audio/*.m4a | sort -R | head -n1`
+    songpath=`ls ${CUR_DIR}/../audio/*.{m4a,webm,mp3,aac,wma} 2>/dev/null | sort -R | head -n1`
     echo "Playing ..."
     echo "$songpath"
     mpv "$songpath"
