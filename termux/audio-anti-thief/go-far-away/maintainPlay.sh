@@ -1,3 +1,5 @@
+#alias play-audio='mpv'  # 在一些机型上无法使用mpv，报CANNOT LINK EXECUTABLE "mpv": cannot locate symbol "TIFFReadRGBAImage_2" referenced by "/system/lib64/libskia.so"...
+
 
 playAudio(){
     if [ "`ps aux|grep mpv|grep -wv grep|awk '{print $2}'`" ]; then
