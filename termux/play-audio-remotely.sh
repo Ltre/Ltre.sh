@@ -8,6 +8,9 @@
 # 4、客户机已安装sshpass
 # 5、远程已安装mpv或play-audio
 
+# playbin=$PREFIX/bin/mpv
+playbin=$PREFIX/bin/play-audio
+
 USR='用户'
 PWD='密码'
 HOST=$1
@@ -45,5 +48,5 @@ if [ "$?" != "0" ]; then
     exit
 fi
 
-sshpass -p "$PWD" ssh -l $USR -p $PORT $HOST "mpv ${RMDIR}/${TMPFILE}; rm -f ${RMDIR}/${TMPFILE}"
+sshpass -p "$PWD" ssh -l $USR -p $PORT $HOST "${playbin} ${RMDIR}/${TMPFILE}; rm -f ${RMDIR}/${TMPFILE}"
 

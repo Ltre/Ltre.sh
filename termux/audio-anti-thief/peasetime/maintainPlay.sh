@@ -1,4 +1,6 @@
-#alias play-audio='mpv'  # 在一些机型上无法使用mpv，报CANNOT LINK EXECUTABLE "mpv": cannot locate symbol "TIFFReadRGBAImage_2" referenced by "/system/lib64/libskia.so"...
+# 在一些机型上无法使用mpv，报CANNOT LINK EXECUTABLE "mpv": cannot locate symbol "TIFFReadRGBAImage_2" referenced by "/system/lib64/libskia.so"...
+# playbin=$PREFIX/bin/play-audio
+playbin=$PREFIX/bin/mpv # 能用这个就用这个，这个有播放时间刻度显示
 
 
 playAudio(){
