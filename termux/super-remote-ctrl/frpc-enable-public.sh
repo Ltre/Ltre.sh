@@ -3,3 +3,5 @@ frpcPID=`ps -ef|grep frpc.ini|grep -v grep|awk '{print $2}'`
 if [ "$frpcPID" = "" ]; then
     nohup ~/bin/frp/frpc -c ~/bin/frp/conf/frpc.ini >> ~/bin/frp/frpc.log &
 fi
+
+sshd
