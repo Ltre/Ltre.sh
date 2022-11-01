@@ -4,4 +4,5 @@ if [ "$frpcPID" = "" ]; then
     nohup ~/bin/frp/frpc -c ~/bin/frp/conf/frpc.ini >> ~/bin/frp/frpc.log &
 fi
 
+termux-wake-lock #还是要叫醒，否则可能会断掉SSH
 sshd
