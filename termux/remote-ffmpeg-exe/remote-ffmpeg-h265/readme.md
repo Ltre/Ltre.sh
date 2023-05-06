@@ -21,6 +21,7 @@
 
     - rh265.sh  "视频文件路径.mp4" # 使用默认的服务器配置文件，执行转码
     - rh265.sh -s mm -c 23 -p slow "视频文件路径.mp4"  # 指定服务器配置文件 conf/rh265.mm.conf，并设置 ffmpeg 的 -crf 参数值为23，设置ffmpeg的-preset参数值为slow
+    - rh265.sh -s mm -c 23 -p slow -v scale=1280:720 "原视频文件路径.mp4" # 指定服务器配置文件 conf/rh265.mm.conf，并设置 ffmpeg 的 -crf 参数值为23，设置ffmpeg的-preset参数值为slow，设置ffmpeg的vf参数为“scale=1280:720”
     - rh265.sh  "原视频文件路径.mp4"  "原视频文件路径改名.mp4" # 先改名，再使用默认的服务器配置文件，执行转码
     - rh265.sh -s mm -c 23 -p slow "原视频文件路径.mp4" "原视频文件路径改名.mp4"  # 先改名，指定服务器配置文件 conf/rh265.mm.conf，并设置 ffmpeg 的 -crf 参数值为23，设置ffmpeg的-preset参数值为slow
     - nrh265.sh 参数用法跟 rh265.sh 一样，只不过这个命令会以 nohup rh265.sh xxxx 形式运行，并在原视频目录自动生成同名的nohup日志备胎文件，隔1秒用使用tailf命令呈现此nohup的滚动日志，使用者可以放心按下CTRL+C，不会中断进程。

@@ -24,6 +24,7 @@ CUR_DIR="$(dirname "$(readlink -f "$0")")"
 #       接受最后一个参数，作为本地视频文件路径，转码完成后的结果文件为 [输入路径再追加"{.SERV}{.CRF}.mkv"]  （此参数必须写在最尾）
 #       -c 参数可定制 ffmpeg 的crf参数值 （可选）
 #       -s 参数指定配置文件的简称，例如 -s mm 会指定 rh265.mm.conf  （可选）
+#       -v 参数可定制 ffmpeg 的vf参数值 （可选）
 ARGS=("$@")
 if [[ $# = 0 ]]; then less "${CUR_DIR}/readme.md"; exit; fi
 VDPATH=${ARGS[$(($#-1))]}   # 输入文件名（一般取最后一个参数作为输入视频文件名。但如果倒数第二个参数也是文件名，则会先将 [倒数第二个文件名] 所指文件，移动到 [最后一个参数值] 所指文件路径，再开始转码）
@@ -32,7 +33,9 @@ CRF_SUFFIX=""               # 本地生成文件名后缀的crf部分
 SERV=""                     # 带有服务器简称的文件名中缀残片
 PRESET=""                   # ffmpeg命令的preset残片
 PRESET_SUFFIX=""            # 本地生成文件名后缀的preset部分
-while getopts "c:s:p:" optname; do
+VF=""                       # ffmpeg命令的vf残片
+VF_SUFFIX=""                # 本地生成文件名后缀的vf部分
+while getopts "c:s:p:v:" optname; do
     case "$optname" in
         c)
             CRF="-crf ${OPTARG}"
@@ -44,6 +47,10 @@ while getopts "c:s:p:" optname; do
         p)
             PRESET="-preset ${OPTARG}"
             PRESET_SUFFIX=".pr${OPTARG}"
+            ;;
+        v)
+            VF="-vf ${OPTARG}"
+            VF_SUFFIX=".vf$(($RANDOM%99999))"
             ;;
         *)
             echo "error arg option: -${optname}."
@@ -104,7 +111,7 @@ fi
 
 
 # 本地生成文件统一用的完整中缀，如 ".mm.crf23"，生成某文件的具体名称为 xxxxxxx.mm.crf23.finished
-GENF_SUFFIX=${SERV}${CRF_SUFFIX}${PRESET_SUFFIX}
+GENF_SUFFIX=${SERV}${CRF_SUFFIX}${PRESET_SUFFIX}${VF_SUFFIX}
 
 # 生成PID标记文件，便于跟踪
 PID_FILE="${VDPATH}"${GENF_SUFFIX}.pid.$$
@@ -251,7 +258,7 @@ echo "────────────── PID=$$ ────────
                 echo \"已有mkv文件，不必重复提交\"
                 exit
             fi
-            ffmpeg -i \$inputfile -c:v libx265 -c:a copy $CRF $PRESET -movflags +faststart \$outputfile
+            ffmpeg -i \$inputfile $VF -c:v libx265 -c:a copy $CRF $PRESET -movflags +faststart \$outputfile
             ffmpegResult=\$?
             md5sum \$outputfile|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5
             if [[ -e \"\$outputfile\" ]] && [[ \"0\" -eq \"\$ffmpegResult\" ]]; then
