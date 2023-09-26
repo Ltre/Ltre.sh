@@ -28,14 +28,16 @@ CUR_DIR="$(dirname "$(readlink -f "$0")")"
 ARGS=("$@")
 if [[ $# = 0 ]]; then less "${CUR_DIR}/readme.md"; exit; fi
 VDPATH=${ARGS[$(($#-1))]}   # 输入文件名（一般取最后一个参数作为输入视频文件名。但如果倒数第二个参数也是文件名，则会先将 [倒数第二个文件名] 所指文件，移动到 [最后一个参数值] 所指文件路径，再开始转码）
-CRF=""                      # ffmpeg命令的crf残片
-CRF_SUFFIX=""               # 本地生成文件名后缀的crf部分
-SERV=""                     # 带有服务器简称的文件名中缀残片
-PRESET=""                   # ffmpeg命令的preset残片
-PRESET_SUFFIX=""            # 本地生成文件名后缀的preset部分
-VF=""                       # ffmpeg命令的vf残片
-VF_SUFFIX=""                # 本地生成文件名后缀的vf部分
-while getopts "c:s:p:v:" optname; do
+CRF=""              # ffmpeg命令的crf残片
+CRF_SUFFIX=""       # 本地生成文件名后缀的crf部分
+SERV=""             # 带有服务器简称的文件名中缀残片
+PRESET=""           # ffmpeg命令的preset残片
+PRESET_SUFFIX=""    # 本地生成文件名后缀的preset部分
+VF=""               # ffmpeg命令的vf残片
+VF_SUFFIX=""        # 本地生成文件名后缀的vf部分
+EXTRA=""            # ffmpeg命令中的其它补充子串，如有引号则用单引号，例如 "-filter:v setpts=0.5*PTS"
+EXTRA_SUFFIX=""     # 本地生成文件名后缀的EXTRA部分
+while getopts "c:s:p:v:e:" optname; do
     case "$optname" in
         c)
             CRF="-crf ${OPTARG}"
@@ -52,6 +54,10 @@ while getopts "c:s:p:v:" optname; do
             VF="-vf ${OPTARG}"
             VF_SUFFIX=".vf$(($RANDOM%99999))"
             ;;
+        e)
+            EXTRA=" ${OPTARG} "
+            EXTRA_SUFFIX=".extra$(($RANDOM%99999))"
+            ;;
         *)
             echo "error arg option: -${optname}."
             exit
@@ -60,7 +66,8 @@ while getopts "c:s:p:v:" optname; do
 done
 
 
-
+#echo $EXTRA
+#exit
 
 
 # 文件参数拦截 
@@ -111,7 +118,7 @@ fi
 
 
 # 本地生成文件统一用的完整中缀，如 ".mm.crf23"，生成某文件的具体名称为 xxxxxxx.mm.crf23.finished
-GENF_SUFFIX=${SERV}${CRF_SUFFIX}${PRESET_SUFFIX}${VF_SUFFIX}
+GENF_SUFFIX=${SERV}${CRF_SUFFIX}${PRESET_SUFFIX}${VF_SUFFIX}${EXTRA_SUFFIX}
 
 # 生成PID标记文件，便于跟踪
 PID_FILE="${VDPATH}"${GENF_SUFFIX}.pid.$$
@@ -258,7 +265,7 @@ echo "────────────── PID=$$ ────────
                 echo \"已有mkv文件，不必重复提交\"
                 exit
             fi
-            ffmpeg -i \$inputfile $VF -c:v libx265 -c:a copy $CRF $PRESET -movflags +faststart \$outputfile
+            ffmpeg -i \$inputfile $VF -c:v libx265 -c:a copy $CRF $PRESET $EXTRA -movflags +faststart \$outputfile
             ffmpegResult=\$?
             md5sum \$outputfile|awk \"{print \\\$1}\" > ${REMOTEDIR}/${REMOTE_TMPFILE}.output.md5
             if [[ -e \"\$outputfile\" ]] && [[ \"0\" -eq \"\$ffmpegResult\" ]]; then
