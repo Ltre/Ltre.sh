@@ -5,7 +5,8 @@ $files = glob('*.apk'); //在centos7/8中证实，glob拿到的列表顺序，�
 $zip = new ZipArchive;
 foreach ($files as $v) {
   $to = $v.'.tcwfpy.zip';
-  $cmd = "zip -r -P 密码 {$to} {$v}";
+  $cmd = "zip -r -P 密码 \"{$to}\" \"{$v}\" ";
   system($cmd);
   unlink($v);
 }
+
