@@ -32,10 +32,16 @@ while [[ $# -gt 0 ]]; do
 done
 
 # 输入视频文件路径是必需的
-if [ -z "$input_video" ]; then
+if [ -z "$input_video" ] || [ ! -e "$input_video" ]; then
     echo "请输入输入视频文件路径。"
     exit 1
 fi
+
+# 由于懒得调试，故直接进入所在目录
+cd "$(dirname "$input_video")"
+
+# 获取文件名
+input_video=$(basename "$input_video")
 
 # 创建临时文件夹
 temp_dir_name="${input_video:0:10}-$(date +'%Y%m%d%H%M%S')"
