@@ -1,4 +1,5 @@
-#!/bin/bash
+# 输入视频，按需求将视频切割无限个分段，最后合并成一个视频
+# e.g. ~/bin/splitMerge.sh "/path/to/video.mp4" 00:01-00:56 02:05.563-01:01:01 02:03:04.999-05:00:00
 
 # 检查FFmpeg是否已安装
 if ! command -v ffmpeg &> /dev/null; then
