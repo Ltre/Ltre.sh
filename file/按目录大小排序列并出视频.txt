@@ -1,0 +1,93 @@
+# 个人使用记录，仅作留存
+
+# 第一层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*.mp4 2>/dev/null >> videolist1; done
+
+# 第二层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*.mp4 2>/dev/null >> videolist2; done
+
+# 第三层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*.mp4 2>/dev/null >> videolist3; done
+
+
+# 第一层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*.mkv 2>/dev/null >> mkvlist1; done
+
+# 第二层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*.mkv 2>/dev/null >> mkvlist2; done
+
+# 第三层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*.mkv 2>/dev/null >> mkvlist3; done
+
+
+# --------------------------------------------------------
+
+
+# 第一层
+for i in `ls */*.mp4 2>/dev/null`;do echo $i >> mp4list1; done
+
+# 第二层
+for i in `ls */*/*.mp4 2>/dev/null`;do echo $i >> mp4list2; done
+
+# 第三层
+for i in `ls */*/*/*.mp4 2>/dev/null`;do echo $i >> mp4list3; done
+
+for i in `ls */*/*/*/*.mp4 2>/dev/null`;do echo $i >> mp4list4; done
+for i in `ls */*/*/*/*/*.mp4 2>/dev/null`;do echo $i >> mp4list5; done
+
+# 第一层
+for i in `ls */*.mkv 2>/dev/null`;do echo $i >> mkvlist1; done
+
+# 第二层
+for i in `ls */*/*.mkv 2>/dev/null`;do echo $i >> mkvlist2; done
+
+# 第三层
+for i in `ls */*/*/*.mkv 2>/dev/null`;do echo $i >> mkvlist3; done
+
+for i in `ls */*/*/*/*.mkv 2>/dev/null`;do echo $i >> mkvlist4; done
+for i in `ls */*/*/*/*/*.mkv 2>/dev/null`;do echo $i >> mkvlist5; done
+
+# --------------------------------------------------------
+
+
+# 第一层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*.mp4 2>/dev/null >> videolist; done
+
+# 第二层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*.mp4 2>/dev/null >> videolist; done
+
+# 第三层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*.mp4 2>/dev/null >> videolist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*.mp4 2>/dev/null >> videolist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*.mp4 2>/dev/null >> videolist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*.mp4 2>/dev/null >> videolist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*/*.mp4 2>/dev/null >> videolist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*/*/*.mp4 2>/dev/null >> videolist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*/*/*/*.mp4 2>/dev/null >> videolist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*/*/*/*/*.mp4 2>/dev/null >> videolist; done
+
+
+# 第一层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*.mkv 2>/dev/null >> mkvlist; done
+
+# 第二层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*.mkv 2>/dev/null >> mkvlist; done
+
+# 第三层
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*.mkv 2>/dev/null >> mkvlist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*.mkv 2>/dev/null >> mkvlist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*.mkv 2>/dev/null >> mkvlist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*.mkv 2>/dev/null >> mkvlist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*/*.mkv 2>/dev/null >> mkvlist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*/*/*.mkv 2>/dev/null >> mkvlist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*/*/*/*.mkv 2>/dev/null >> mkvlist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*/*/*/*/*.mkv 2>/dev/null >> mkvlist; done
+for i in `dusha|awk 'NF{print $NF}'`;do ls $i/*/*/*/*/*/*/*/*/*/*/*.mkv 2>/dev/null >> mkvlist; done
+
+
+nohup bash task.1 >> task.1.nohup &
+nohup bash task.2 >> task.2.nohup &
+nohup bash task.3 >> task.3.nohup &
+nohup bash task.4 >> task.4.nohup &
+nohup bash task.5 >> task.5.nohup &
+nohup bash task.6 >> task.6.nohup &
