@@ -83,3 +83,22 @@ for folder in $(ls -d [0-9]*-* 2>/dev/null | sort -n); do
     fi
     cd ..
 done
+
+# 进入 groupMerged 目录
+cd groupMerged || exit
+
+# 遍历目录中的所有视频文件，转换H.265
+for video_file in $(ls -1tr [0-9]*-*.* 2>/dev/null); do
+    if [ -f "$video_file" ]; then
+        # 获取数字、分辨率和实际扩展名
+        number_resolution_extension=$(echo "$video_file" | sed -E 's/^([0-9]+-[0-9]+)\.([a-zA-Z0-9]+)$/\1 \2/')
+        read -r number_resolution extension <<<"$number_resolution_extension"
+        
+        # 有BUG，没有正确分离出 resolution（确保类似于 "480x854"，而不是类似于 "480x854.flv"）
+        resolution=$(echo "$number_resolution" | grep -oP '[0-9]+x[0-9]+')
+        
+        # 执行 ffmpeg 转换为 H.265 命令
+        output_file="${number_resolution}-h265.mkv"
+        ffmpeg -i "$video_file" -c:v libx265 -c:a copy -r 30 -movflags +faststart "$output_file"
+    fi
+done
