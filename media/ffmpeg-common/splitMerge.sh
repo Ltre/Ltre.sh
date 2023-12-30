@@ -49,14 +49,16 @@ temp_dir_name="${input_video:0:10}-$(date +'%Y%m%d%H%M%S')"
 temp_dir="$temp_dir_name"
 mkdir -p "$temp_dir"
 
-# 创建输出文件名
-if [ -z "$output_file" ]; then
-    output_file="${input_video%.*}$output_suffix"
-fi
-
 # 创建分段文件列表
 segment_list="${temp_dir}/segments.txt"
 # rm -f "$segment_list"
+
+input_extension="${input_video##*.}"
+
+# 创建缺省输出文件名
+if [ -z "$output_file" ]; then
+    output_file="${input_video%.*}-output.$input_extension"
+fi
 
 segment_number=1
 for cut_range in "${cut_ranges[@]}"; do
@@ -64,7 +66,7 @@ for cut_range in "${cut_ranges[@]}"; do
     start_time=${range[0]}
     end_time=${range[1]}
 
-    segment_name="segment$segment_number.mp4"
+    segment_name="segment$segment_number.$input_extension"
     segment_file="${temp_dir}/${segment_name}"
 
     ffmpeg -ss "$start_time" -to "$end_time" -i "$input_video" -c:v copy -c:a copy "$segment_file"
@@ -79,6 +81,9 @@ ffmpeg -f concat -safe 0 -i "$segment_list" -c:v copy -c:a copy "$output_file"
 echo "视频切割和合并完成，输出文件为 $output_file。"
 
 # 清理临时文件
+echo "是否保留临时分片目录(y/N):"
+read jx
+if [ "$jx" = "y" ]; then exit; fi
 if [ -n "$temp_dir" ] && [ -d "$temp_dir" ] && [ "$temp_dir" != "/" ]; then
     rm -r "$temp_dir"
 fi
