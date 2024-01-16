@@ -12,13 +12,14 @@ mkdir -p "${CUR_DIR}"/cache
 # status -p ${pid} # 仅列出某任务的信息 （此模式将不列出所有任务列表和机器状态）
 # status -p ${pid} -c [sub_cmd] # 执行某任务的子指令 （此模式将不列出所有任务列表和机器状态）。[sub_cmd]子命令，支持cwd|CMD|local|localFull|remote|loging|logend|logRemote|state|dl|kl
 HIDE_TASK=0
-HIDE_SERV=0
+HIDE_SERV=1
 TASK_PID=0
 SUB_CMD=''
 while getopts "stp:c:" optname; do
     case "$optname" in
         s)
             HIDE_TASK=1
+	    HIDE_SERV=0
             ;;
         t)
             HIDE_SERV=1
@@ -26,10 +27,10 @@ while getopts "stp:c:" optname; do
         p)
             TASK_PID=$OPTARG
             HIDE_TASK=1
-			HIDE_SERV=1
-			;;
-		c)
-			SUB_CMD="${OPTARG}"
+            HIDE_SERV=1
+	    ;;
+	c)
+	    SUB_CMD="${OPTARG}"
             ;;
         *)
             echo "error arg option: -${optname}."
@@ -112,7 +113,7 @@ fi
 
 if [[ "${HIDE_SERV}" != "1" ]]; then
 
-	servers=(138 139 aly gzz mm txhk hkmm webdev)
+	servers=(gz aly mm lstk rnca txhk)
 	for serv in ${servers[@]}; do
 		echo "------------- Server $serv --------------"
 		# CUR_DIR="$(dirname "$(readlink -f "$0")")"
