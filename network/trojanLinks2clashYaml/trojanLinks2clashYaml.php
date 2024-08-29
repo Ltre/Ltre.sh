@@ -4,7 +4,7 @@
 /**
  * trojan链接文件转为clash配置文件
  * 输入文件trojan.links可由Trojan-Qt5-Windows.1.1.6导出
- * 输出文件clash_config.yaml可导入Clash for Android (版本2.5.12.premium, 包名com.github.kr328.clash)
+ * 输出文件clash_config.yaml可导入Clash
  */
 function convert_trojan_to_clash($trojan_links) {
     $clash_config = "";
