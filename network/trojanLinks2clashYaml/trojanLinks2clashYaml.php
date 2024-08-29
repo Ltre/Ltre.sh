@@ -2,6 +2,7 @@
 <?php
 
 /**
+ * 【不好用，不建议用】
  * trojan链接文件转为clash配置文件
  * 输入文件trojan.links可由Trojan-Qt5-Windows.1.1.6导出
  * 输出文件clash_config.yaml可导入Clash
