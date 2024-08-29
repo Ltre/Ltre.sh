@@ -1,0 +1,2 @@
+- { name: Trojan-GFW, type: trojan, server: test1.com, port: 11, password: password1 }
+- { name: Trojan-GFW, type: trojan, server: test2.com, port: 456, password: password2 }
