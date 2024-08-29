@@ -1,0 +1,181 @@
+{
+    "configs": [
+        {
+            "method": "aes-256-cfb",
+            "mux": false,
+            "mux_concurrency": 8,
+            "mux_idle_timeout": 8,
+            "obfs": "plain",
+            "obfsParam": "",
+            "password": "password1",
+            "plugin": "",
+            "pluginParam": "",
+            "protocol": "password1",
+            "protocolParam": "password1",
+            "remarks": "abc",
+            "reuse_port": false,
+            "reuse_session": true,
+            "server": "abc.com",
+            "server_port": 1234,
+            "session_ticket": false,
+            "sni": "",
+            "tcp_fast_open": false,
+            "type": "trojan",
+            "uuid": "",
+            "verify_certificate": true,
+            "verify_hostname": true,
+            "vmessSettings": {
+                "http": {
+                    "path": "/"
+                },
+                "kcp": {
+                    "congestion": false,
+                    "downlinkCapacity": 20,
+                    "header": {
+                        "type": "none"
+                    },
+                    "mtu": 1460,
+                    "readBufferSize": 1,
+                    "tti": 20,
+                    "uplinkCapacity": 5,
+                    "writeBufferSize": 1
+                },
+                "network": "tcp",
+                "tcp": {
+                    "header": {
+                        "request": "{\n    \"version\": \"1.1\",\n    \"method\": \"GET\",\n    \"path\": [],\n    \"headers\": {}\n}",
+                        "response": "{\n    \"version\": \"1.1\",\n    \"status\": \"200\",\n    \"reason\": \"OK\",\n    \"headers\": {}\n}",
+                        "type": "none"
+                    }
+                },
+                "tls": {
+                    "allowInsecure": false,
+                    "allowInsecureCiphers": false,
+                    "enable": false,
+                    "serverName": ""
+                },
+                "ws": {
+                    "path": "/"
+                }
+            }
+        },
+        {
+            "method": "aes-256-cfb",
+            "mux": false,
+            "mux_concurrency": 8,
+            "mux_idle_timeout": 8,
+            "obfs": "plain",
+            "obfsParam": "",
+            "password": "password1",
+            "plugin": "",
+            "pluginParam": "",
+            "protocol": "password1",
+            "protocolParam": "password1",
+            "remarks": "def",
+            "reuse_port": false,
+            "reuse_session": true,
+            "server": "def.com",
+            "server_port": 1234,
+            "session_ticket": false,
+            "sni": "",
+            "tcp_fast_open": false,
+            "type": "trojan",
+            "uuid": "",
+            "verify_certificate": true,
+            "verify_hostname": true,
+            "vmessSettings": {
+                "http": {
+                    "path": "/"
+                },
+                "kcp": {
+                    "congestion": false,
+                    "downlinkCapacity": 20,
+                    "header": {
+                        "type": "none"
+                    },
+                    "mtu": 1460,
+                    "readBufferSize": 1,
+                    "tti": 20,
+                    "uplinkCapacity": 5,
+                    "writeBufferSize": 1
+                },
+                "network": "tcp",
+                "tcp": {
+                    "header": {
+                        "request": "{\n    \"version\": \"1.1\",\n    \"method\": \"GET\",\n    \"path\": [],\n    \"headers\": {}\n}",
+                        "response": "{\n    \"version\": \"1.1\",\n    \"status\": \"200\",\n    \"reason\": \"OK\",\n    \"headers\": {}\n}",
+                        "type": "none"
+                    }
+                },
+                "tls": {
+                    "allowInsecure": false,
+                    "allowInsecureCiphers": false,
+                    "enable": false,
+                    "serverName": ""
+                },
+                "ws": {
+                    "path": "/"
+                }
+            }
+        },
+        {
+            "method": "aes-256-cfb",
+            "mux": false,
+            "mux_concurrency": 8,
+            "mux_idle_timeout": 8,
+            "obfs": "plain",
+            "obfsParam": "",
+            "password": "password1",
+            "plugin": "",
+            "pluginParam": "",
+            "protocol": "password1",
+            "protocolParam": "password1",
+            "remarks": "ghi",
+            "reuse_port": false,
+            "reuse_session": true,
+            "server": "ghi.com",
+            "server_port": 1234,
+            "session_ticket": false,
+            "sni": "",
+            "tcp_fast_open": false,
+            "type": "trojan",
+            "uuid": "",
+            "verify_certificate": true,
+            "verify_hostname": true,
+            "vmessSettings": {
+                "http": {
+                    "path": "/"
+                },
+                "kcp": {
+                    "congestion": false,
+                    "downlinkCapacity": 20,
+                    "header": {
+                        "type": "none"
+                    },
+                    "mtu": 1460,
+                    "readBufferSize": 1,
+                    "tti": 20,
+                    "uplinkCapacity": 5,
+                    "writeBufferSize": 1
+                },
+                "network": "tcp",
+                "tcp": {
+                    "header": {
+                        "request": "{\n    \"version\": \"1.1\",\n    \"method\": \"GET\",\n    \"path\": [],\n    \"headers\": {}\n}",
+                        "response": "{\n    \"version\": \"1.1\",\n    \"status\": \"200\",\n    \"reason\": \"OK\",\n    \"headers\": {}\n}",
+                        "type": "none"
+                    }
+                },
+                "tls": {
+                    "allowInsecure": false,
+                    "allowInsecureCiphers": false,
+                    "enable": false,
+                    "serverName": ""
+                },
+                "ws": {
+                    "path": "/"
+                }
+            }
+        }
+    ]
+}
