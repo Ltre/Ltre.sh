@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# 设置软链：ln -s ~/mydir/bin/anyproxy.sh /usr/local/bin/anyproxy
+# 设置软链(linux vps)：ln -s ~/mydir/bin/anyproxy.sh /usr/local/bin/anyproxy
+# 设置软链(termux)：ln -s ~/mydir/bin/anyproxy.sh /data/data/com.termux/files/usr/bin/anyproxy
 
 # 使用： anyproxy curl google.com
 
