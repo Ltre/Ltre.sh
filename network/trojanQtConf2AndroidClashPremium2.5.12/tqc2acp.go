@@ -310,8 +310,6 @@ proxies:
 - DOMAIN-SUFFIX,meituan.net,DIRECT
 - DOMAIN-SUFFIX,mi.com,DIRECT
 - DOMAIN-SUFFIX,miaopai.com,DIRECT
-- DOMAIN-SUFFIX,microsoft.com,DIRECT
-- DOMAIN-SUFFIX,microsoftonline.com,DIRECT
 - DOMAIN-SUFFIX,miui.com,DIRECT
 - DOMAIN-SUFFIX,miwifi.com,DIRECT
 - DOMAIN-SUFFIX,mob.com,DIRECT
@@ -683,6 +681,10 @@ proxies:
 - DOMAIN-SUFFIX,ytimg.com,Proxy
 - DOMAIN-SUFFIX,telegra.ph,Proxy
 - DOMAIN-SUFFIX,telegram.org,Proxy
+- DOMAIN-SUFFIX,x.com,Proxy
+- DOMAIN-SUFFIX,chatgpt.com,Proxy
+- DOMAIN-SUFFIX,openai.com,Proxy
+- DOMAIN-SUFFIX,microsoft.com,Proxy
 - IP-CIDR,91.108.4.0/22,Proxy,no-resolve
 - IP-CIDR,91.108.8.0/22,Proxy,no-resolve
 - IP-CIDR,91.108.12.0/22,Proxy,no-resolve
