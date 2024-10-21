@@ -169,6 +169,11 @@ proxies:
 			log.Println("Invalid format: skipping config item without 'remarks'.")
 			continue
 		}
+		// typez, ok := configItemMap["type"].(string)
+		// if !ok {
+		// 	log.Println("Invalid format: skipping config item without 'type'.")
+		// 	continue
+		// }
 		verifyCert, ok := configItemMap["verify_certificate"].(bool)
 		if !ok {
 			log.Println("Invalid format: skipping config item without 'verify_certificate'.")
@@ -179,6 +184,7 @@ proxies:
 		// Write the required string to the file
 		fmt.Fprintf(file, "  -\n")
 		fmt.Fprintf(file, "    name: %s\n", remarks)
+		// fmt.Fprintf(file, "    type: %s\n", typez)
 		fmt.Fprintf(file, "    type: trojan\n")
 		fmt.Fprintf(file, "    server: %s\n", server)
 		fmt.Fprintf(file, "    port: %.0f\n", serverPort)
