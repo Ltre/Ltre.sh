@@ -1,0 +1,35 @@
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+alias tailf='tail -f'
+alias ll='ls -l --color=auto'
+alias dush='du -sh *|sort -hr'
+
+export PATH=$PATH:/data/data/com.termux/files/home/bin/livedl
+
+dusha() {
+    if [[ "$1" =~ \* ]] || (! [ -d "$1" ] && ! [[ "$1" =~ ^$ ]]); then
+        echo 'warning: arg 1 must be an exact folder or empty string.'
+        return
+    fi
+    dirs=`ls -a $1`
+    prefpath=`if [ ${#1} -eq 0 ]; then echo; else echo $1/; fi`
+    for one in $dirs
+    do
+        if ! [[ "$one" =~ ^\.{1,2}$ ]]; then
+            du -sh "${prefpath}${one}";
+        fi
+    done | sort -hr
+}
+
+# 支持任意PHP，为后期外部调用自定义命令等功能提供支持
+~/bin/phpserver/9999.daemon.sh 2>&1 > /dev/null
+
+
+# 记录SSH日志
+# Check if the session is via SSH
+if [[ -n "$SSH_CONNECTION" ]] || [[ -n "$SSH_CLIENT" ]]; then
+    echo "SSH login detected on $(date) from ${SSH_CLIENT%% *}" >> ~/.ssh/login.log
+else
+    echo "Local login detected on $(date)" >> ~/.ssh/login.log
+fi
