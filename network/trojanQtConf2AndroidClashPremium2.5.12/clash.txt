@@ -43,6 +43,7 @@ proxies:
   -
     name: abc
     type: trojan
+    cipher: aes-256-cfb
     server: abc.com
     port: 1234
     password: password1
@@ -53,6 +54,7 @@ proxies:
   -
     name: def
     type: trojan
+    cipher: aes-256-cfb
     server: def.com
     port: 1234
     password: password1
@@ -63,6 +65,7 @@ proxies:
   -
     name: ghi
     type: trojan
+    cipher: aes-256-cfb
     server: ghi.com
     port: 1234
     password: password1
@@ -177,8 +180,6 @@ rules:
 - DOMAIN-SUFFIX,meituan.net,DIRECT
 - DOMAIN-SUFFIX,mi.com,DIRECT
 - DOMAIN-SUFFIX,miaopai.com,DIRECT
-- DOMAIN-SUFFIX,microsoft.com,DIRECT
-- DOMAIN-SUFFIX,microsoftonline.com,DIRECT
 - DOMAIN-SUFFIX,miui.com,DIRECT
 - DOMAIN-SUFFIX,miwifi.com,DIRECT
 - DOMAIN-SUFFIX,mob.com,DIRECT
@@ -550,6 +551,37 @@ rules:
 - DOMAIN-SUFFIX,ytimg.com,Proxy
 - DOMAIN-SUFFIX,telegra.ph,Proxy
 - DOMAIN-SUFFIX,telegram.org,Proxy
+- DOMAIN-SUFFIX,x.com,Proxy
+- DOMAIN-SUFFIX,chatgpt.com,Proxy
+- DOMAIN-SUFFIX,openai.com,Proxy
+- DOMAIN-SUFFIX,microsoft.com,Proxy
+- DOMAIN-SUFFIX,mapbox.com,Proxy
+- DOMAIN-SUFFIX,stripe.network,Proxy
+- DOMAIN-SUFFIX,stripe.com,Proxy
+- DOMAIN-SUFFIX,cloudflareinsights.com,Proxy
+- DOMAIN-SUFFIX,notion.so,Proxy
+- DOMAIN-SUFFIX,splunkcloud.com,Proxy
+- DOMAIN-SUFFIX,sentry.io,Proxy
+- DOMAIN-SUFFIX,ngest.sentry.io,Proxy
+- DOMAIN-SUFFIX,hotjar.com,Proxy
+- DOMAIN-SUFFIX,metadata.io,Proxy
+- DOMAIN-SUFFIX,ipify.org,Proxy
+- DOMAIN-SUFFIX,gist.build,Proxy
+- DOMAIN-SUFFIX,cloud.gist.build,Proxy
+- DOMAIN-SUFFIX,oaistatic.com,Proxy
+- DOMAIN-SUFFIX,s.gravatar.com,Proxy
+- DOMAIN-SUFFIX,oaiusercontent.com,Proxy
+- DOMAIN-SUFFIX,you.com,Proxy
+- DOMAIN-SUFFIX,launchdarkly.com,Proxy
+- DOMAIN-SUFFIX,plausible.io,Proxy
+- DOMAIN-SUFFIX,braze.com,Proxy
+- DOMAIN-SUFFIX,appsflyer.com,Proxy
+- DOMAIN-SUFFIX,clarity.ms,Proxy
+- DOMAIN-SUFFIX,go2sdk.com,Proxy
+- DOMAIN-SUFFIX,profitwell.com,Proxy
+- DOMAIN-SUFFIX,descope.com,Proxy
+- DOMAIN-SUFFIX,onelink.me,Proxy
+- DOMAIN-SUFFIX,stytch.com,Proxy
 - IP-CIDR,91.108.4.0/22,Proxy,no-resolve
 - IP-CIDR,91.108.8.0/22,Proxy,no-resolve
 - IP-CIDR,91.108.12.0/22,Proxy,no-resolve

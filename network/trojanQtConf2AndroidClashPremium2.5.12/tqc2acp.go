@@ -5,7 +5,7 @@ package main
  * 转换为Clash For Android(2.5.12 Premium版, 包名com.github.kr328.clash)可用的配置文件
  *
  * 使用：
- *		go run tqc2acp.go
+ *		go run tqc2acp.go [可选：gui-config.json文件路径] [可选：clash.txt文件路径]
  */
 
 /**
@@ -66,173 +66,8 @@ import (
 	"os" // Import the os package for file operations
 )
 
-func main() {
-	// Read gui-config.json file and store it in the 'data' variable.
-	data, err := ioutil.ReadFile("gui-config.json")
-	if err != nil {
-		log.Fatal("Error reading gui-config.json:", err)
-	}
-
-	// Define a variable 'proxies' (string array type).
-	var proxies []string
-
-	// Unmarshal the JSON data into a map.
-	var configData map[string]interface{}
-	if err := json.Unmarshal(data, &configData); err != nil {
-		log.Fatal("Error unmarshaling JSON:", err)
-	}
-
-	// Retrieve the 'config' array under the 'data' object and iterate through it.
-	configArray, ok := configData["configs"].([]interface{})
-	if !ok {
-		log.Fatal("Invalid format: 'config' array not found.")
-	}
-
-	// Create or open the clash.txt file for writing
-	file, err := os.Create("clash.txt")
-	if err != nil {
-		log.Fatal("Error creating clash.txt:", err)
-	}
-	defer file.Close() // Close the file when done
-
-	os.Truncate("clash.txt", 0)
-	fmt.Fprintf(file,
-		`port: 7890
-socks-port: 7891
-allow-lan: false
-mode: Rule
-log-level: silent
-external-controller: 127.0.0.1:9090
-secret: ""
-dns:
-  enable: true
-  ipv6: false
-  nameserver:
-    - 223.5.5.5
-    - 180.76.76.76
-    - 119.29.29.29
-    - 117.50.11.11
-    - 117.50.10.10
-    - 114.114.114.114
-    - https://dns.alidns.com/dns-query
-    - https://doh.360.cn/dns-query
-  fallback:
-    - 8.8.8.8
-    - tls://dns.rubyfish.cn:853
-    - tls://1.0.0.1:853
-    - tls://dns.google:853
-    - https://dns.rubyfish.cn/dns-query
-    - https://cloudflare-dns.com/dns-query
-    - https://dns.google/dns-query
-  fallback-filter:
-    geoip: true
-    ipcidr:
-      - 240.0.0.0/4
-      - 0.0.0.0/32
-      - 127.0.0.1/32
-    domain:
-      - +.google.com
-      - +.facebook.com
-      - +.youtube.com
-      - +.xn--ngstr-lra8j.com
-      - +.google.cn
-      - +.googleapis.cn
-      - +.gvt1.com
-proxies:
-`)
-
-	for _, configItem := range configArray {
-		configItemMap, ok := configItem.(map[string]interface{})
-		if !ok {
-			log.Println("Invalid format: skipping config item.")
-			continue
-		}
-
-		// Extract properties: 'server', 'server_port', 'password', 'remarks', and 'verify_certificate'.
-		server, ok := configItemMap["server"].(string)
-		if !ok {
-			log.Println("Invalid format: skipping config item without 'server'.")
-			continue
-		}
-		serverPort, ok := configItemMap["server_port"].(float64)
-		if !ok {
-			log.Println("Invalid format: skipping config item without 'server_port'.")
-			continue
-		}
-		password, ok := configItemMap["password"].(string)
-		if !ok {
-			log.Println("Invalid format: skipping config item without 'password'.")
-			continue
-		}
-		remarks, ok := configItemMap["remarks"].(string)
-		if !ok {
-			log.Println("Invalid format: skipping config item without 'remarks'.")
-			continue
-		}
-		typez, ok := configItemMap["type"].(string)
-		if !ok {
-			log.Println("Invalid format: skipping config item without 'type'.")
-			continue
-		}
-		cipher, ok := configItemMap["method"].(string)
-		if !ok {
-			log.Println("Invalid format: skipping config item without 'method'.")
-			continue
-		}
-		verifyCert, ok := configItemMap["verify_certificate"].(bool)
-		if !ok {
-			log.Println("Invalid format: skipping config item without 'verify_certificate'.")
-			continue
-		}
-		skipVerifyCert := !verifyCert
-
-		// Write the required string to the file
-		fmt.Fprintf(file, "  -\n")
-		fmt.Fprintf(file, "    name: %s\n", remarks)
-		fmt.Fprintf(file, "    type: %s\n", typez)
-		fmt.Fprintf(file, "    cipher: %s\n", cipher)
-		fmt.Fprintf(file, "    server: %s\n", server)
-		fmt.Fprintf(file, "    port: %.0f\n", serverPort)
-		fmt.Fprintf(file, "    password: %s\n", password)
-		fmt.Fprintf(file, "    alpn:\n")
-		fmt.Fprintf(file, "      - h2\n")
-		fmt.Fprintf(file, "      - http/1.1\n")
-		fmt.Fprintf(file, "    skip-cert-verify: %v\n", skipVerifyCert)
-
-		// Add the 'server' value to the 'proxies' array.
-		proxies = append(proxies, remarks)
-	}
-
-	fmt.Fprintf(file,
-		`proxy-groups:
-  - 
-    name: Auto
-    type: url-test
-    url: http://www.gstatic.com/generate_204
-    interval: 300
-    proxies:
-`)
-
-	// Iterate through the 'proxies' variable and write to the file
-	for _, proxy := range proxies {
-		fmt.Fprintf(file, "      - %s\n", proxy)
-	}
-
-	fmt.Fprintf(file,
-		`  - 
-    name: Proxy
-    type: select
-    proxies:
-      - Auto
-`)
-
-	// Iterate through the 'proxies' variable and write to the file
-	for _, proxy := range proxies {
-		fmt.Fprintf(file, "      - %s\n", proxy)
-	}
-
-	fmt.Fprintf(file,
-		`rules:
+func getDomainRules() string {
+	rules := `rules:
 - DOMAIN-SUFFIX,ghcr.io,Proxy
 - DOMAIN-SUFFIX,googleapis.cn,Proxy
 - DOMAIN-KEYWORD,googleapis.cn,Proxy
@@ -696,6 +531,33 @@ proxies:
 - DOMAIN-SUFFIX,chatgpt.com,Proxy
 - DOMAIN-SUFFIX,openai.com,Proxy
 - DOMAIN-SUFFIX,microsoft.com,Proxy
+- DOMAIN-SUFFIX,mapbox.com,Proxy
+- DOMAIN-SUFFIX,stripe.network,Proxy
+- DOMAIN-SUFFIX,stripe.com,Proxy
+- DOMAIN-SUFFIX,cloudflareinsights.com,Proxy
+- DOMAIN-SUFFIX,notion.so,Proxy
+- DOMAIN-SUFFIX,splunkcloud.com,Proxy
+- DOMAIN-SUFFIX,sentry.io,Proxy
+- DOMAIN-SUFFIX,ngest.sentry.io,Proxy
+- DOMAIN-SUFFIX,hotjar.com,Proxy
+- DOMAIN-SUFFIX,metadata.io,Proxy
+- DOMAIN-SUFFIX,ipify.org,Proxy
+- DOMAIN-SUFFIX,gist.build,Proxy
+- DOMAIN-SUFFIX,cloud.gist.build,Proxy
+- DOMAIN-SUFFIX,oaistatic.com,Proxy
+- DOMAIN-SUFFIX,s.gravatar.com,Proxy
+- DOMAIN-SUFFIX,oaiusercontent.com,Proxy
+- DOMAIN-SUFFIX,you.com,Proxy
+- DOMAIN-SUFFIX,launchdarkly.com,Proxy
+- DOMAIN-SUFFIX,plausible.io,Proxy
+- DOMAIN-SUFFIX,braze.com,Proxy
+- DOMAIN-SUFFIX,appsflyer.com,Proxy
+- DOMAIN-SUFFIX,clarity.ms,Proxy
+- DOMAIN-SUFFIX,go2sdk.com,Proxy
+- DOMAIN-SUFFIX,profitwell.com,Proxy
+- DOMAIN-SUFFIX,descope.com,Proxy
+- DOMAIN-SUFFIX,onelink.me,Proxy
+- DOMAIN-SUFFIX,stytch.com,Proxy
 - IP-CIDR,91.108.4.0/22,Proxy,no-resolve
 - IP-CIDR,91.108.8.0/22,Proxy,no-resolve
 - IP-CIDR,91.108.12.0/22,Proxy,no-resolve
@@ -714,6 +576,188 @@ proxies:
 - IP-CIDR,100.64.0.0/10,DIRECT
 - GEOIP,CN,DIRECT
 - MATCH,Proxy
+`
+	return rules
+}
+
+func main() {
+	var guiConFile string
+	if len(os.Args) < 2 {
+		guiConFile = "gui-config.json"
+	} else {
+		guiConFile = os.Args[1]
+	}
+
+	var outFile string
+	if len(os.Args) < 3 {
+		outFile = "clash.txt"
+	} else {
+		outFile = os.Args[2]
+	}
+
+	// Read gui-config.json file and store it in the 'data' variable.
+	data, err := ioutil.ReadFile(guiConFile)
+	if err != nil {
+		log.Fatal("Error reading gui-config.json:", err)
+	}
+
+	// Define a variable 'proxies' (string array type).
+	var proxies []string
+
+	// Unmarshal the JSON data into a map.
+	var configData map[string]interface{}
+	if err := json.Unmarshal(data, &configData); err != nil {
+		log.Fatal("Error unmarshaling JSON:", err)
+	}
+
+	// Retrieve the 'config' array under the 'data' object and iterate through it.
+	configArray, ok := configData["configs"].([]interface{})
+	if !ok {
+		log.Fatal("Invalid format: 'config' array not found.")
+	}
+
+	// Create or open the clash.txt file for writing
+	file, err := os.Create(outFile)
+	if err != nil {
+		log.Fatal("Error creating outFile", err)
+	}
+	defer file.Close() // Close the file when done
+
+	os.Truncate(outFile, 0)
+	fmt.Fprintf(file,
+		`port: 7890
+socks-port: 7891
+allow-lan: false
+mode: Rule
+log-level: silent
+external-controller: 127.0.0.1:9090
+secret: ""
+dns:
+  enable: true
+  ipv6: false
+  nameserver:
+    - 223.5.5.5
+    - 180.76.76.76
+    - 119.29.29.29
+    - 117.50.11.11
+    - 117.50.10.10
+    - 114.114.114.114
+    - https://dns.alidns.com/dns-query
+    - https://doh.360.cn/dns-query
+  fallback:
+    - 8.8.8.8
+    - tls://dns.rubyfish.cn:853
+    - tls://1.0.0.1:853
+    - tls://dns.google:853
+    - https://dns.rubyfish.cn/dns-query
+    - https://cloudflare-dns.com/dns-query
+    - https://dns.google/dns-query
+  fallback-filter:
+    geoip: true
+    ipcidr:
+      - 240.0.0.0/4
+      - 0.0.0.0/32
+      - 127.0.0.1/32
+    domain:
+      - +.google.com
+      - +.facebook.com
+      - +.youtube.com
+      - +.xn--ngstr-lra8j.com
+      - +.google.cn
+      - +.googleapis.cn
+      - +.gvt1.com
+proxies:
 `)
 
+	for _, configItem := range configArray {
+		configItemMap, ok := configItem.(map[string]interface{})
+		if !ok {
+			log.Println("Invalid format: skipping config item.")
+			continue
+		}
+
+		// Extract properties: 'server', 'server_port', 'password', 'remarks', and 'verify_certificate'.
+		server, ok := configItemMap["server"].(string)
+		if !ok {
+			log.Println("Invalid format: skipping config item without 'server'.")
+			continue
+		}
+		serverPort, ok := configItemMap["server_port"].(float64)
+		if !ok {
+			log.Println("Invalid format: skipping config item without 'server_port'.")
+			continue
+		}
+		password, ok := configItemMap["password"].(string)
+		if !ok {
+			log.Println("Invalid format: skipping config item without 'password'.")
+			continue
+		}
+		remarks, ok := configItemMap["remarks"].(string)
+		if !ok {
+			log.Println("Invalid format: skipping config item without 'remarks'.")
+			continue
+		}
+		typez, ok := configItemMap["type"].(string)
+		if !ok {
+			log.Println("Invalid format: skipping config item without 'type'.")
+			continue
+		}
+		cipher, ok := configItemMap["method"].(string)
+		if !ok {
+			log.Println("Invalid format: skipping config item without 'method'.")
+			continue
+		}
+		verifyCert, ok := configItemMap["verify_certificate"].(bool)
+		if !ok {
+			log.Println("Invalid format: skipping config item without 'verify_certificate'.")
+			continue
+		}
+		skipVerifyCert := !verifyCert
+
+		// Write the required string to the file
+		fmt.Fprintf(file, "  -\n")
+		fmt.Fprintf(file, "    name: %s\n", remarks)
+		fmt.Fprintf(file, "    type: %s\n", typez)
+		fmt.Fprintf(file, "    cipher: %s\n", cipher)
+		fmt.Fprintf(file, "    server: %s\n", server)
+		fmt.Fprintf(file, "    port: %.0f\n", serverPort)
+		fmt.Fprintf(file, "    password: %s\n", password)
+		fmt.Fprintf(file, "    alpn:\n")
+		fmt.Fprintf(file, "      - h2\n")
+		fmt.Fprintf(file, "      - http/1.1\n")
+		fmt.Fprintf(file, "    skip-cert-verify: %v\n", skipVerifyCert)
+
+		// Add the 'server' value to the 'proxies' array.
+		proxies = append(proxies, remarks)
+	}
+
+	fmt.Fprintf(file,
+		`proxy-groups:
+  - 
+    name: Auto
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    proxies:
+`)
+
+	// Iterate through the 'proxies' variable and write to the file
+	for _, proxy := range proxies {
+		fmt.Fprintf(file, "      - %s\n", proxy)
+	}
+
+	fmt.Fprintf(file,
+		`  - 
+    name: Proxy
+    type: select
+    proxies:
+      - Auto
+`)
+
+	// Iterate through the 'proxies' variable and write to the file
+	for _, proxy := range proxies {
+		fmt.Fprintf(file, "      - %s\n", proxy)
+	}
+
+	fmt.Fprintf(file, getDomainRules())
 }
