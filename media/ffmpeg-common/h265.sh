@@ -17,8 +17,11 @@ if [ -n "$5" ]; then
 fi
 
 SSTO=""
-if [ -n "$6" ] && [ -n "$7" ]; then
-    SSTO=" -ss $6 -to $7 "
+if [ -n "$6" ]; then
+    SSTO=" -ss $6 "
+fi
+if [ -n "$7" ]; then
+    SSTO=$SSTO" -to $7 "
 fi
 
 echo "1: $1"
@@ -37,7 +40,7 @@ echo "SSTO : $SSTO"
 
 if [ -n "$1" ];then
     if [ -n "$2" ];then
-        echo ffmpeg $SS $TO -i "$1" -c:v libx265 $SCL $R $CRF -c:a copy -movflags +faststart "$2"
+        ffmpeg $SSTO -i "$1" -c:v libx265 $SCL $R $CRF -c:a copy -movflags +faststart "$2"
         exit
     else
         echo "缺少输出文件路径"
