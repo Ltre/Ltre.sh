@@ -100,8 +100,10 @@ for ((frame_index=1; frame_index<=max_frames; frame_index++)); do
 
     # 动态布局逻辑
     if [ "$N" -eq 2 ]; then
-        # 两个视频：左右拼接
-        magick "${marked_files[@]}" +append "$output_dir/comparison_${frame_index}.png"
+        # # 两个视频：左右拼接
+        # magick "${frame_files[0]}" "${frame_files[1]}" +append "$output_dir/comparison_${frame_index}.png"
+        # 两个视频：上下拼接
+        magick "${frame_files[0]}" "${frame_files[1]}" -append "$output_dir/comparison_${frame_index}.png"
     else
         # 多视频：动态田字格布局
         side_length=$(calculate_side_length "$N")
