@@ -39,7 +39,7 @@ N=${#videos[@]} # 视频数量
 gap=15
 
 # 临时目录
-output_dir="comparison_frames"
+output_dir=/sdcard/1/comparison_frames_$(date +"%Y%m%d_%H%M%S")
 mkdir -p "$output_dir"
 
 # 提取所有视频的帧
