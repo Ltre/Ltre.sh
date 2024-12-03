@@ -25,6 +25,26 @@
 
 # 使用方法: compare-vidframes.sh [-g 截图间隔帧数] /path/to/v1.mp4 /path/to/v2.mp4 ...
 
+# 默认截取间隔帧数
+gap=15
+
+# 解析输入参数
+while getopts ":g:" opt; do
+    case $opt in
+        g)
+            gap=$OPTARG
+            ;;
+        \?)
+            echo "无效的选项: -$OPTARG"
+            exit 1
+            ;;
+        :)
+            echo "选项 -$OPTARG 需要一个参数"
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND -1)) # 移动到非选项参数
 
 # 检查输入参数
 if [ "$#" -lt 2 ]; then
@@ -36,8 +56,6 @@ fi
 videos=("$@")
 N=${#videos[@]} # 视频数量
 
-# 默认截取间隔帧数
-gap=15
 
 # 临时目录
 output_dir=/sdcard/1/comparison_frames_$(date +"%Y%m%d_%H%M%S")
@@ -75,7 +93,7 @@ for ((frame_index=1; frame_index<=max_frames; frame_index++)); do
 
     # 动态布局逻辑
     if [ "$N" -eq 2 ]; then
-        # # 两个视频：左右拼接
+	# # 两个视频：左右拼接
         # magick "${frame_files[0]}" "${frame_files[1]}" +append "$output_dir/comparison_${frame_index}.png"
         # 两个视频：上下拼接
         magick "${frame_files[0]}" "${frame_files[1]}" -append "$output_dir/comparison_${frame_index}.png"
