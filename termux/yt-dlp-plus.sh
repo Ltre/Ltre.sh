@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 5  ln -s ~/bin/yt-dlp-plus.sh $PREFIX/bin/yt-dlpp
+# 将此脚本加入软链： ln -s ~/bin/yt-dlp-plus.sh $PREFIX/bin/yt-dlpp
 
 # yt-dlpp (懒人版yt-dlp) for Termux
 # 原yt-dlp: pip install yt-dlp
