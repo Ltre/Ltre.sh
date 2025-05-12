@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# 将此脚本加入软链：ln -s ~/bin/yt-dlp-plus.sh $PREFIX/bin/yt-dlpp
+# 5  ln -s ~/bin/yt-dlp-plus.sh $PREFIX/bin/yt-dlpp
 
 # yt-dlpp (懒人版yt-dlp) for Termux
 # 原yt-dlp: pip install yt-dlp
 # env: python, ffmpeg, pip
 #
 # 特性：
-# 1. 封装yt+dlp，取个新名字叫 yt-dlpp，默认缺省使用cookies参数，内部实现形如“  yt-dlp --cookies ~/cookies/youtube.txt ”，对于yt-dlpc的用法，和原yt-dlp保持一致
+# 1. 封装yt+dlp，取个新名字叫 yt-dlpp，默认缺省使用cookies参数，内部实现形如“  yt-dlp --cookies ~/cookies/youtube.txt ”，对于yt-dlpp的用法，和原yt-dlp保持一致
 # 2. 新增 --FF 参数。当传入 --FF，将始终调用 -F 参数，并推荐视频+音频组合信息；在没有传入 --FF 参数时，即使有 -F 参数传入，也保持 yt-dlp 的默认行为。
 # 3. 默认进入目录/sdcard/1/ytdl，除非手动指定 -o 参数
 
@@ -16,12 +16,17 @@ cd /sdcard/1/ytdl
 
 # 默认的 cookies 文件路径
 COOKIES_FILE=~/cookies/youtube.txt
+# COOKIES_FILE=~/cookies/ytm.cookie
 
 # 检查 cookies 文件是否存在
 if [ ! -f "$COOKIES_FILE" ]; then
   echo "Cookies 文件不存在: $COOKIES_FILE"
   exit 1
 fi
+
+# 公共参数
+#COMMON_CMD=' --extractor-args "youtube:player_client=android" --cookies $COOKIES_FILE '
+COMMON_CMD=' --cookies $COOKIES_FILE '
 
 # 初始化变量
 FF_FLAG=false
@@ -39,7 +44,7 @@ done
 # 如果启用推荐功能，调用 -F 参数
 if [ "$FF_FLAG" = true ]; then
   # 构建命令
-  COMMAND="yt-dlp --cookies $COOKIES_FILE -F $@"
+  COMMAND="yt-dlp $COMMON_CMD -F $@"
 
   # 执行命令并捕获输出
   eval $COMMAND 2>&1 | tee yt-dlp_output.log
@@ -90,7 +95,7 @@ if [ "$FF_FLAG" = true ]; then
   done <<< "$VIDEO_FORMATS"
 else
   # 构建命令
-  COMMAND="yt-dlp --cookies $COOKIES_FILE $@"
+  COMMAND="yt-dlp $COMMON_CMD $@"
 
   # 执行命令
   eval $COMMAND
